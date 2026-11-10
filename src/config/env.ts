@@ -95,7 +95,10 @@ const envSchema = z.object({
     .int()
     .min(0)
     .max(5)
-    .default(2)
+    .default(2),
+  
+  SAUCEDEMO_USERNAME: z.string().min(1),
+  SAUCEDEMO_PASSWORD: z.string().min(1)
 });
 
 export type AppConfig = z.infer<typeof envSchema>;
@@ -126,6 +129,7 @@ export function redactConfigForLogging(
   return {
     ...config,
     ANTHROPIC_API_KEY: '[REDACTED]',
-    GITHUB_TOKEN: '[REDACTED]'
+    GITHUB_TOKEN: '[REDACTED]',
+    SAUCEDEMO_PASSWORD: '[REDACTED]'
   };
 }

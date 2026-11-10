@@ -27,7 +27,9 @@ describe('Phase 2 Environment and Cross-Platform Utilities', () => {
     GITHUB_OWNER: 'test-owner',
     GITHUB_REPO: 'test-repo',
     GITHUB_ISSUE_NUMBER: '42',
-    TARGET_BASE_URL: 'https://example.com'
+    TARGET_BASE_URL: 'https://example.com',
+    SAUCEDEMO_USERNAME: 'test-user',
+    SAUCEDEMO_PASSWORD: 'test-password'
   };
 
   it('validates environment configuration and applies defaults', () => {
