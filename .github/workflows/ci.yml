@@ -1,0 +1,55 @@
+name: Cross-Platform CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build & Test (${{ matrix.os_label }} / Node ${{ matrix.node_version }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            os_label: Windows-x64
+            node_version: '26.x'
+
+          - os: macos-26-intel
+            os_label: macOS-Intel-x64
+            node_version: '26.x'
+
+          - os: macos-26
+            os_label: macOS-AppleSilicon-arm64
+            node_version: '26.x'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node_version }}
+          cache: npm
+
+      - name: Verify environment
+        run: node -e "console.log({ platform: process.platform, arch: process.arch, node: process.version })"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
