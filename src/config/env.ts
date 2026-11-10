@@ -49,6 +49,8 @@ const envSchema = z.object({
 
   GITHUB_RFQA_STATUS_VALUE: z.string().default('RFQA'),
 
+  GITHUB_PROJECT_NUMBER: z.coerce.number().int().positive(),
+
   GITHUB_RFQA_FALLBACK_LABEL: z
     .enum(['true', 'false'])
     .default('true')
