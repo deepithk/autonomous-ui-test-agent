@@ -27,6 +27,7 @@ describe('Phase 2 Environment and Cross-Platform Utilities', () => {
     GITHUB_OWNER: 'test-owner',
     GITHUB_REPO: 'test-repo',
     GITHUB_ISSUE_NUMBER: '42',
+    GITHUB_PROJECT_NUMBER: '1',
     TARGET_BASE_URL: 'https://example.com',
     SAUCEDEMO_USERNAME: 'test-user',
     SAUCEDEMO_PASSWORD: 'test-password'
@@ -39,6 +40,7 @@ describe('Phase 2 Environment and Cross-Platform Utilities', () => {
     expect(config.GITHUB_ISSUE_NUMBER).toBe(42);
     expect(config.PLAYWRIGHT_MCP_CAPS).toBe('testing');
     expect(config.MAX_STEPS_PER_SCENARIO).toBe(15);
+    expect(config.GITHUB_PROJECT_NUMBER).toBe(1);
   });
 
   it('rejects missing required environment variables', () => {
