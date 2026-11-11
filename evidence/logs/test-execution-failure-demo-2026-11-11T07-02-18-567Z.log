@@ -1,0 +1,55 @@
+2026-11-11T07:02:18.574Z RUN START plan=test-plan-issue-1-2026-11-11T02-55-44-828Z.json llm=gemini/gemini-3.5-flash-lite
+2026-11-11T07:02:18.588Z [SC-001] SCENARIO START "Verify successful login"
+2026-11-11T07:02:24.294Z [SC-001] [STEP-01] navigate "Login URL" PASSED 4884 ms
+2026-11-11T07:02:26.350Z [SC-001] [STEP-01] SCREENSHOT step screenshots\failure-demo-2026-11-11T07-02-18-567Z\SC-001_STEP-01_step.png
+2026-11-11T07:02:26.522Z [SC-001] [STEP-02] fill "Username field" -> textbox "Username" (matched by plan fields) PASSED 113 ms
+2026-11-11T07:02:26.575Z [SC-001] [STEP-02] SCREENSHOT step screenshots\failure-demo-2026-11-11T07-02-18-567Z\SC-001_STEP-02_step.png
+2026-11-11T07:02:26.600Z [SC-001] [STEP-03] fill "Password field" -> textbox "Password" (matched by plan fields) PASSED 24 ms
+2026-11-11T07:02:26.665Z [SC-001] [STEP-03] SCREENSHOT step screenshots\failure-demo-2026-11-11T07-02-18-567Z\SC-001_STEP-03_step.png
+2026-11-11T07:02:32.841Z [SC-001] [STEP-04] click "Login button" -> button "Login" (matched by plan fields) PASSED 6174 ms
+2026-11-11T07:02:34.922Z [SC-001] [ASSERT-01] AC-01 url after STEP-04 expected="https://www.saucedemo.com/inventory.html" actual="https://www.saucedemo.com/" FAILED
+2026-11-11T07:02:34.932Z [SC-001] [STEP-04] PAGE url=https://www.saucedemo.com/ messages: "Epic sadface: Sorry, this user has been locked out."
+2026-11-11T07:02:34.996Z [SC-001] [STEP-04] SCREENSHOT checkpoint screenshots\failure-demo-2026-11-11T07-02-18-567Z\SC-001_STEP-04_checkpoint.png
+2026-11-11T07:02:46.727Z [SC-001] SCENARIO END FAILED 28139 ms
+2026-11-11T07:02:46.728Z [SC-002] SCENARIO START "Add product to shopping cart and verify badge update"
+2026-11-11T07:02:50.556Z [SC-002] [STEP-01] navigate "Login URL" PASSED 3471 ms
+2026-11-11T07:02:52.556Z [SC-002] [STEP-01] SCREENSHOT step screenshots\failure-demo-2026-11-11T07-02-18-567Z\SC-002_STEP-01_step.png
+2026-11-11T07:02:52.612Z [SC-002] [STEP-02] fill "Username field" -> textbox "Username" (matched by plan fields) PASSED 55 ms
+2026-11-11T07:02:52.672Z [SC-002] [STEP-02] SCREENSHOT step screenshots\failure-demo-2026-11-11T07-02-18-567Z\SC-002_STEP-02_step.png
+2026-11-11T07:02:52.699Z [SC-002] [STEP-03] fill "Password field" -> textbox "Password" (matched by plan fields) PASSED 26 ms
+2026-11-11T07:02:52.754Z [SC-002] [STEP-03] SCREENSHOT step screenshots\failure-demo-2026-11-11T07-02-18-567Z\SC-002_STEP-03_step.png
+2026-11-11T07:02:58.845Z [SC-002] [STEP-04] click "Login button" -> button "Login" (matched by plan fields) PASSED 6090 ms
+2026-11-11T07:02:58.889Z [SC-002] [STEP-04] SCREENSHOT step screenshots\failure-demo-2026-11-11T07-02-18-567Z\SC-002_STEP-04_step.png
+2026-11-11T07:03:16.069Z [SC-002] [STEP-05] observe "First product title on inventory list" FAILED: No element matched "First product title on inventory list": The inventory list is not visible in the snapshot because the user is on the login page with a locked out error. Self-healing also failed: No alternative element found for "First product title on inventory list": The page is on the login screen with a locked out error instead of the inventory list, so the product title cannot be observed. 17179 ms
+2026-11-11T07:03:16.085Z [SC-002] [STEP-05] PAGE url=https://www.saucedemo.com/ messages: "Epic sadface: Sorry, this user has been locked out."
+2026-11-11T07:03:16.164Z [SC-002] [STEP-05] SCREENSHOT failure screenshots\failure-demo-2026-11-11T07-02-18-567Z\SC-002_STEP-05_failure.png
+2026-11-11T07:03:28.122Z [SC-002] [ASSERT-02] AC-02 text after STEP-07 ERROR: Not evaluated: STEP-05 failed.
+2026-11-11T07:03:28.123Z [SC-002] [ASSERT-03] AC-03 text after STEP-07 ERROR: Not evaluated: STEP-05 failed.
+2026-11-11T07:03:28.124Z [SC-002] SCENARIO END FAILED 41396 ms STEP-05 failed: No element matched "First product title on inventory list": The inventory list is not visible in the snapshot because the user is on the login page with a locked out error. Self-healing also failed: No alternative element found for "First product title on inventory list": The page is on the login screen with a locked out error instead of the inventory list, so the product title cannot be observed.
+2026-11-11T07:03:28.124Z [SC-003] SCENARIO START "Verify cart contents and remove product from cart"
+2026-11-11T07:03:32.150Z [SC-003] [STEP-01] navigate "Login URL" PASSED 3576 ms
+2026-11-11T07:03:37.065Z [SC-003] [STEP-01] SCREENSHOT step screenshots\failure-demo-2026-11-11T07-02-18-567Z\SC-003_STEP-01_step.png
+2026-11-11T07:03:37.113Z [SC-003] [STEP-02] fill "Username field" -> textbox "Username" (matched by plan fields) PASSED 48 ms
+2026-11-11T07:03:37.162Z [SC-003] [STEP-02] SCREENSHOT step screenshots\failure-demo-2026-11-11T07-02-18-567Z\SC-003_STEP-02_step.png
+2026-11-11T07:03:37.188Z [SC-003] [STEP-03] fill "Password field" -> textbox "Password" (matched by plan fields) PASSED 24 ms
+2026-11-11T07:03:37.265Z [SC-003] [STEP-03] SCREENSHOT step screenshots\failure-demo-2026-11-11T07-02-18-567Z\SC-003_STEP-03_step.png
+2026-11-11T07:03:43.502Z [SC-003] [STEP-04] click "Login button" -> button "Login" (matched by plan fields) PASSED 6236 ms
+2026-11-11T07:03:43.580Z [SC-003] [STEP-04] SCREENSHOT step screenshots\failure-demo-2026-11-11T07-02-18-567Z\SC-003_STEP-04_step.png
+2026-11-11T07:03:52.730Z [SC-003] [STEP-05] observe "First product title on inventory list" FAILED: No element matched "First product title on inventory list": The inventory list is not visible in the snapshot because the user is on the login page with a locked out error. Self-healing also failed: No alternative element found for "First product title on inventory list": The page is on the login screen with a locked out error instead of the inventory list, so the product name cannot be observed. 9149 ms
+2026-11-11T07:03:52.764Z [SC-003] [STEP-05] PAGE url=https://www.saucedemo.com/ messages: "Epic sadface: Sorry, this user has been locked out."
+2026-11-11T07:03:52.844Z [SC-003] [STEP-05] SCREENSHOT failure screenshots\failure-demo-2026-11-11T07-02-18-567Z\SC-003_STEP-05_failure.png
+2026-11-11T07:04:04.876Z [SC-003] [ASSERT-04] AC-04 text after STEP-08 ERROR: Not evaluated: STEP-05 failed.
+2026-11-11T07:04:04.877Z [SC-003] [ASSERT-05] AC-04 text after STEP-08 ERROR: Not evaluated: STEP-05 failed.
+2026-11-11T07:04:04.878Z [SC-003] [ASSERT-06] AC-04 text after STEP-08 ERROR: Not evaluated: STEP-05 failed.
+2026-11-11T07:04:04.879Z [SC-003] [ASSERT-07] AC-05 element_count after STEP-09 ERROR: Not evaluated: STEP-05 failed.
+2026-11-11T07:04:04.880Z [SC-003] [ASSERT-08] AC-06 element_count after STEP-09 ERROR: Not evaluated: STEP-05 failed.
+2026-11-11T07:04:04.880Z [SC-003] [ASSERT-09] AC-06 element_count after STEP-09 ERROR: Not evaluated: STEP-05 failed.
+2026-11-11T07:04:04.881Z [SC-003] SCENARIO END FAILED 36757 ms STEP-05 failed: No element matched "First product title on inventory list": The inventory list is not visible in the snapshot because the user is on the login page with a locked out error. Self-healing also failed: No alternative element found for "First product title on inventory list": The page is on the login screen with a locked out error instead of the inventory list, so the product name cannot be observed.
+2026-11-11T07:04:04.887Z [AC-01] CRITERION FAILED 0/1
+2026-11-11T07:04:04.888Z [AC-02] CRITERION ERROR 0/1
+2026-11-11T07:04:04.889Z [AC-03] CRITERION ERROR 0/1
+2026-11-11T07:04:04.889Z [AC-04] CRITERION ERROR 0/3
+2026-11-11T07:04:04.890Z [AC-05] CRITERION ERROR 0/1
+2026-11-11T07:04:04.891Z [AC-06] CRITERION ERROR 0/2
+2026-11-11T07:04:04.891Z LLM requests=8 answers_reused=0
+2026-11-11T07:04:04.892Z RUN END FAILED report=test-execution-issue-1-failure-demo-2026-11-11T07-02-18-567Z.json

@@ -1,0 +1,64 @@
+2026-11-11T07:04:34.762Z RUN START plan=test-plan-issue-1-2026-11-11T02-55-44-828Z.json llm=gemini/gemini-3.5-flash-lite
+2026-11-11T07:04:34.774Z [SC-001] SCENARIO START "Verify successful login"
+2026-11-11T07:04:38.397Z [SC-001] [STEP-01] navigate "Login URL" PASSED 3086 ms
+2026-11-11T07:04:40.653Z [SC-001] [STEP-01] SCREENSHOT step screenshots\2026-11-11T07-04-34-758Z\SC-001_STEP-01_step.png
+2026-11-11T07:04:40.724Z [SC-001] [STEP-02] fill "Username field" -> textbox "Username" (matched by plan fields) PASSED 69 ms
+2026-11-11T07:04:40.800Z [SC-001] [STEP-02] SCREENSHOT step screenshots\2026-11-11T07-04-34-758Z\SC-001_STEP-02_step.png
+2026-11-11T07:04:40.838Z [SC-001] [STEP-03] fill "Password field" -> textbox "Password" (matched by plan fields) PASSED 36 ms
+2026-11-11T07:04:40.902Z [SC-001] [STEP-03] SCREENSHOT step screenshots\2026-11-11T07-04-34-758Z\SC-001_STEP-03_step.png
+2026-11-11T07:04:42.038Z [SC-001] [STEP-04] click "Login button" -> button "Login" (matched by plan fields) PASSED 1134 ms
+2026-11-11T07:04:42.060Z [SC-001] [ASSERT-01] AC-01 url after STEP-04 expected="https://www.saucedemo.com/inventory.html" actual="https://www.saucedemo.com/inventory.html" PASSED
+2026-11-11T07:04:42.151Z [SC-001] [STEP-04] SCREENSHOT checkpoint screenshots\2026-11-11T07-04-34-758Z\SC-001_STEP-04_checkpoint.png
+2026-11-11T07:04:42.739Z [SC-001] SCENARIO END PASSED 7965 ms
+2026-11-11T07:04:42.741Z [SC-002] SCENARIO START "Add product to shopping cart and verify badge update"
+2026-11-11T07:04:47.551Z [SC-002] [STEP-01] navigate "Login URL" PASSED 4133 ms
+2026-11-11T07:04:49.558Z [SC-002] [STEP-01] SCREENSHOT step screenshots\2026-11-11T07-04-34-758Z\SC-002_STEP-01_step.png
+2026-11-11T07:04:49.603Z [SC-002] [STEP-02] fill "Username field" -> textbox "Username" (matched by plan fields) PASSED 45 ms
+2026-11-11T07:04:49.662Z [SC-002] [STEP-02] SCREENSHOT step screenshots\2026-11-11T07-04-34-758Z\SC-002_STEP-02_step.png
+2026-11-11T07:04:49.688Z [SC-002] [STEP-03] fill "Password field" -> textbox "Password" (matched by plan fields) PASSED 25 ms
+2026-11-11T07:04:49.744Z [SC-002] [STEP-03] SCREENSHOT step screenshots\2026-11-11T07-04-34-758Z\SC-002_STEP-03_step.png
+2026-11-11T07:04:50.895Z [SC-002] [STEP-04] click "Login button" -> button "Login" (matched by plan fields) PASSED 1149 ms
+2026-11-11T07:04:50.992Z [SC-002] [STEP-04] SCREENSHOT step screenshots\2026-11-11T07-04-34-758Z\SC-002_STEP-04_step.png
+2026-11-11T07:04:55.433Z [SC-002] [STEP-05] observe "First product title on inventory list" -> button "View details for Sauce Labs Backpack" (chosen by LLM: "Ref e49 is the button containing the title of the first product on the inventory list (Sauce Labs Backpack).") captured selectedProductName="Sauce Labs Backpack" PASSED 4439 ms
+2026-11-11T07:04:55.534Z [SC-002] [STEP-05] SCREENSHOT step screenshots\2026-11-11T07-04-34-758Z\SC-002_STEP-05_step.png
+2026-11-11T07:04:57.208Z [SC-002] [STEP-06] observe "Price tag for {{capture.selectedProductName}}" -> generic "$29.99" (chosen by LLM: "The price tag element displaying $29.99 for the Sauce Labs Backpack corresponds to ref e53.") captured selectedProductPrice="$29.99" PASSED 1673 ms
+2026-11-11T07:04:57.287Z [SC-002] [STEP-06] SCREENSHOT step screenshots\2026-11-11T07-04-34-758Z\SC-002_STEP-06_step.png
+2026-11-11T07:05:01.674Z [SC-002] [STEP-07] click "Add to cart button for {{capture.selectedProductName}}" -> button "Add to cart" (chosen by LLM: "This is the Add to cart button associated with the Sauce Labs Backpack product.") PASSED 4386 ms
+2026-11-11T07:05:05.273Z [SC-002] [ASSERT-02] AC-02 text after STEP-07 expected="Remove" actual="Remove" matched=[button "Remove"] PASSED
+2026-11-11T07:05:05.274Z [SC-002] [ASSERT-03] AC-03 text after STEP-07 expected="1" actual="1" matched=[generic "1"] PASSED
+2026-11-11T07:05:05.346Z [SC-002] [STEP-07] SCREENSHOT checkpoint screenshots\2026-11-11T07-04-34-758Z\SC-002_STEP-07_checkpoint.png
+2026-11-11T07:05:05.994Z [SC-002] SCENARIO END PASSED 23253 ms
+2026-11-11T07:05:05.995Z [SC-003] SCENARIO START "Verify cart contents and remove product from cart"
+2026-11-11T07:05:10.538Z [SC-003] [STEP-01] navigate "Login URL" PASSED 4020 ms
+2026-11-11T07:05:12.521Z [SC-003] [STEP-01] SCREENSHOT step screenshots\2026-11-11T07-04-34-758Z\SC-003_STEP-01_step.png
+2026-11-11T07:05:12.561Z [SC-003] [STEP-02] fill "Username field" -> textbox "Username" (matched by plan fields) PASSED 39 ms
+2026-11-11T07:05:12.636Z [SC-003] [STEP-02] SCREENSHOT step screenshots\2026-11-11T07-04-34-758Z\SC-003_STEP-02_step.png
+2026-11-11T07:05:12.677Z [SC-003] [STEP-03] fill "Password field" -> textbox "Password" (matched by plan fields) PASSED 40 ms
+2026-11-11T07:05:12.746Z [SC-003] [STEP-03] SCREENSHOT step screenshots\2026-11-11T07-04-34-758Z\SC-003_STEP-03_step.png
+2026-11-11T07:05:13.971Z [SC-003] [STEP-04] click "Login button" -> button "Login" (matched by plan fields) PASSED 1224 ms
+2026-11-11T07:05:14.051Z [SC-003] [STEP-04] SCREENSHOT step screenshots\2026-11-11T07-04-34-758Z\SC-003_STEP-04_step.png
+2026-11-11T07:05:14.061Z [SC-003] [STEP-05] observe "First product title on inventory list" -> button "View details for Sauce Labs Backpack" (chosen by LLM, answer reused: "Ref e49 is the button containing the title of the first product on the inventory list (Sauce Labs Backpack).") captured selectedProductName="Sauce Labs Backpack" PASSED 9 ms
+2026-11-11T07:05:14.152Z [SC-003] [STEP-05] SCREENSHOT step screenshots\2026-11-11T07-04-34-758Z\SC-003_STEP-05_step.png
+2026-11-11T07:05:14.167Z [SC-003] [STEP-06] observe "Price tag for {{capture.selectedProductName}}" -> generic "$29.99" (chosen by LLM, answer reused: "The price tag element displaying $29.99 for the Sauce Labs Backpack corresponds to ref e53.") captured selectedProductPrice="$29.99" PASSED 14 ms
+2026-11-11T07:05:14.290Z [SC-003] [STEP-06] SCREENSHOT step screenshots\2026-11-11T07-04-34-758Z\SC-003_STEP-06_step.png
+2026-11-11T07:05:14.955Z [SC-003] [STEP-07] click "Add to cart button for {{capture.selectedProductName}}" -> button "Add to cart" (chosen by LLM, answer reused: "This is the Add to cart button associated with the Sauce Labs Backpack product.") PASSED 664 ms
+2026-11-11T07:05:15.040Z [SC-003] [STEP-07] SCREENSHOT step screenshots\2026-11-11T07-04-34-758Z\SC-003_STEP-07_step.png
+2026-11-11T07:05:18.110Z [SC-003] [STEP-08] click "Shopping cart container icon" -> button "Cart, 1 items" (chosen by LLM: "The button representing the shopping cart container icon is ref e124.") PASSED 3069 ms
+2026-11-11T07:05:25.940Z [SC-003] [ASSERT-04] AC-04 text after STEP-08 expected="Sauce Labs Backpack" actual="Sauce Labs Backpack" matched=[generic "Sauce Labs Backpack"] PASSED
+2026-11-11T07:05:25.941Z [SC-003] [ASSERT-05] AC-04 text after STEP-08 expected="1" actual="1" matched=[generic "1"] PASSED
+2026-11-11T07:05:25.942Z [SC-003] [ASSERT-06] AC-04 text after STEP-08 expected="$29.99" actual="$29.99" matched=[generic "$29.99"] PASSED
+2026-11-11T07:05:26.005Z [SC-003] [STEP-08] SCREENSHOT checkpoint screenshots\2026-11-11T07-04-34-758Z\SC-003_STEP-08_checkpoint.png
+2026-11-11T07:05:26.632Z [SC-003] [STEP-09] click "Remove button for {{capture.selectedProductName}} inside cart list" -> button "Remove" (matched by plan fields) PASSED 626 ms
+2026-11-11T07:05:30.305Z [SC-003] [ASSERT-07] AC-05 element_count after STEP-09 expected="0" actual="0" PASSED
+2026-11-11T07:05:30.323Z [SC-003] [ASSERT-08] AC-06 element_count after STEP-09 expected="0" actual="0" PASSED
+2026-11-11T07:05:30.324Z [SC-003] [ASSERT-09] AC-06 element_count after STEP-09 expected="0" actual="0" PASSED
+2026-11-11T07:05:30.375Z [SC-003] [STEP-09] SCREENSHOT checkpoint screenshots\2026-11-11T07-04-34-758Z\SC-003_STEP-09_checkpoint.png
+2026-11-11T07:05:33.112Z [SC-003] SCENARIO END PASSED 27117 ms
+2026-11-11T07:05:33.118Z [AC-01] CRITERION PASSED 1/1
+2026-11-11T07:05:33.118Z [AC-02] CRITERION PASSED 1/1
+2026-11-11T07:05:33.119Z [AC-03] CRITERION PASSED 1/1
+2026-11-11T07:05:33.120Z [AC-04] CRITERION PASSED 3/3
+2026-11-11T07:05:33.121Z [AC-05] CRITERION PASSED 1/1
+2026-11-11T07:05:33.121Z [AC-06] CRITERION PASSED 2/2
+2026-11-11T07:05:33.122Z LLM requests=7 answers_reused=3
+2026-11-11T07:05:33.123Z RUN END PASSED report=test-execution-issue-1-2026-11-11T07-04-34-758Z.json

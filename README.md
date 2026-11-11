@@ -19,9 +19,9 @@ All six acceptance criteria passed in the most recent run (LLM: Gemini Flash-Lit
 
 Evidence for that run:
 
-- [Report](evidence/reports/test-execution-issue-1-2026-11-11T06-15-59-282Z.md) (expected and actual value for every assertion)
-- [Execution log](evidence/logs/test-execution-2026-11-11T06-15-59-282Z.log) (every step, how its element was found and why, every assertion)
-- [Screenshots](evidence/screenshots/2026-11-11T06-15-59-282Z/) (one after every step)
+- [Report](evidence/reports/test-execution-issue-1-2026-11-11T07-04-34-758Z.md) (expected and actual value for every assertion)
+- [Execution log](evidence/logs/test-execution-2026-11-11T07-04-34-758Z.log) (every step, how its element was found and why, every assertion)
+- [Screenshots](evidence/screenshots/2026-11-11T07-04-34-758Z/) (one after every step)
 
 This run made 7 LLM requests, with 3 more answers reused.
 
@@ -29,9 +29,9 @@ This run made 7 LLM requests, with 3 more answers reused.
 
 A second run shows how the agent reports a failing test. It used the SauceDemo account `locked_out_user`, which cannot log in, so the acceptance criteria cannot be met:
 
-- [Failure report](evidence/reports/test-execution-issue-1-failure-demo-2026-11-11T06-16-51-934Z.md), with a **Failure details** section that says what happened, what the page showed, and what to do
-- [Failure log](evidence/logs/test-execution-failure-demo-2026-11-11T06-16-51-934Z.log)
-- [Screenshots](evidence/screenshots/failure-demo-2026-11-11T06-16-51-934Z/)
+- [Failure report](evidence/reports/test-execution-issue-1-failure-demo-2026-11-11T07-02-18-567Z.md), with a **Failure details** section that says what happened, what the page showed, and what to do
+- [Failure log](evidence/logs/test-execution-failure-demo-2026-11-11T07-02-18-567Z.log)
+- [Screenshots](evidence/screenshots/failure-demo-2026-11-11T07-02-18-567Z/)
 
 Design documents: [TEST_PLAN.md](TEST_PLAN.md) (architecture, prompt strategy, guardrails) and [SCENARIOS.md](SCENARIOS.md) (acceptance criteria and scenarios).
 
