@@ -22,6 +22,7 @@ function readIssueFileArgument(argv: string[]): string | undefined {
 }
 
 import { createLLMProvider } from './providers/provider-factory.js';
+import { RetryingProvider } from './providers/retrying-provider.js';
 import { TestPlanner } from './test-planner.js';
 
 import {
@@ -126,7 +127,9 @@ async function main(): Promise<void> {
   }
 
   // 3. Initialize the selected LLM provider.
-  const provider = createLLMProvider(config);
+  // Temporary provider trouble (such as a 503 "high demand") is
+  // retried; quota errors are not.
+  const provider = new RetryingProvider(createLLMProvider(config));
 
   console.info(`[INFO] LLM Provider: ${provider.providerName}`);
   console.info(`[INFO] LLM Model: ${config.LLM_MODEL}`);
