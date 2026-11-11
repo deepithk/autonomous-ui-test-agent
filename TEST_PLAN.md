@@ -48,6 +48,7 @@ changes, the next plan changes with it.
 - Dynamic UI element identification.
 - Independent assertions checked against the live page.
 - Screenshot evidence at every assertion checkpoint.
+- A step-by-step execution log for each run.
 - JSON and Markdown reports with passed / failed / error results and a
   verdict for each acceptance criterion.
 
@@ -59,7 +60,7 @@ changes, the next plan changes with it.
 - Mobile application testing.
 - Multiple-user testing.
 - Production payment integrations.
-- Browser video and a separate execution log file (see section 14).
+- Browser video (see section 14).
 
 ## 4. Application Under Test
 
@@ -188,6 +189,8 @@ that something passed.
 ### 6.7 Evidence and Reporting
 
 - Saves a screenshot at each assertion checkpoint and at a failed step.
+- Writes a step-by-step execution log, one line per step, assertion and
+  screenshot, including how each element was found.
 - Writes a JSON report and a Markdown report.
 - Records the model that wrote the plan and the model that executed it.
 - Redacts credentials from everything it writes.
@@ -220,6 +223,12 @@ snapshot and tries again, up to `MAX_ELEMENT_RECOVERY_ATTEMPTS` times. LLM
 provider failures are not retried this way. Temporary provider errors (such
 as "model is busy") are retried with short waits. Quota errors are never
 retried.
+
+To keep LLM use low, an earlier answer is reused only when the page snapshot
+and the question are exactly the same, so any change on the page causes a
+fresh request. Failed lookups are never remembered. Assertions that belong
+to the same checkpoint are looked up together in one request, and a target
+the LLM leaves unanswered is an error, never "nothing found".
 
 Values shown on the page, such as the first product's name and price, are
 captured and reused in later steps and assertions, so scenarios do not
@@ -308,16 +317,18 @@ Evidence is stored inside the `evidence` directory:
 ```
 evidence/
   reports/                         plan and execution reports
+  logs/                            one execution log per run
   screenshots/<run timestamp>/     checkpoint and failure screenshots
 ```
 
-`evidence/logs` and `evidence/videos` exist as placeholders and are not
-written to yet (section 14).
+`evidence/videos` exists as a placeholder and is not written to yet
+(section 14).
 
 Files for one execution:
 
 - `evidence/reports/test-execution-issue-<n>-<timestamp>.json`
 - `evidence/reports/test-execution-issue-<n>-<timestamp>.md`
+- `evidence/logs/test-execution-<timestamp>.log`
 - `evidence/screenshots/<timestamp>/<scenario>_<step>_<checkpoint|failure>.png`
 
 The report contains:
@@ -325,6 +336,8 @@ The report contains:
 - GitHub issue reference.
 - Execution timestamp and the saved plan it ran.
 - The model that wrote the plan and the model that executed it.
+- The path of the execution log, and how many LLM requests the run made
+  and how many answers were reused.
 - The overall verdict and a verdict per acceptance criterion.
 - Counts of scenarios, steps and assertions by result.
 - For every scenario: each step's result, how its element was found
@@ -373,15 +386,15 @@ need an LLM key and the live site.
   accepts elements that exist on the page, but a wrong choice on an
   "is it absent" check could hide a problem. This is why screenshots are
   saved at every checkpoint.
-- Free LLM tiers have daily request limits. A full run uses roughly 15 to 20
-  requests.
+- Free LLM tiers have daily request limits. A full run for this issue uses
+  about 7 requests, because identical page-and-question answers are reused
+  and assertions at one checkpoint share a request.
 - Application State assertions need manual review.
 - Scenarios run one after another, not in parallel.
 - Only the shopping cart issue has been run so far.
 
 ### Not implemented (future work)
 
-- A step-by-step execution log file in `evidence/logs`.
 - Browser video in `evidence/videos`.
 - Repeated browser-state and no-progress detection. Loops are currently
   prevented by the step limit, the time limits and by stopping at the first
@@ -403,6 +416,6 @@ need an LLM key and the live site.
 | Passed / failed / error reporting works, with a verdict per criterion | Done |
 | Infinite loops are prevented | Done through limits; repeated-state detection is not built |
 | Screenshots are generated | Done |
-| Execution logs are generated | Not done (the JSON report holds step results) |
+| Execution logs are generated | Done: one log per run in `evidence/logs` |
 | The run can be repeated | Done with `npm run execute:plan` (results can vary with the LLM's choices, so the screenshots are kept as evidence) |
 | The solution builds and tests on supported operating systems | CI covers Windows and both macOS architectures for build and unit tests |

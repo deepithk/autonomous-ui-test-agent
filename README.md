@@ -19,8 +19,11 @@ All six acceptance criteria passed in the most recent run (LLM: Gemini Flash-Lit
 
 Evidence for that run:
 
-- [Report](evidence/reports/test-execution-issue-1-2026-11-11T04-59-00-948Z.md) (expected and actual value for every assertion)
-- [Screenshots](evidence/screenshots/2026-11-11T04-59-00-948Z/) taken at each assertion checkpoint
+- [Report](evidence/reports/test-execution-issue-1-2026-11-11T05-20-46-600Z.md) (expected and actual value for every assertion)
+- [Execution log](evidence/logs/test-execution-2026-11-11T05-20-46-600Z.log) (every step, how its element was found, every assertion)
+- [Screenshots](evidence/screenshots/2026-11-11T05-20-46-600Z/) taken at each assertion checkpoint
+
+This run made 7 LLM requests, with 3 more answers reused.
 
 Design documents: [TEST_PLAN.md](TEST_PLAN.md) and [SCENARIOS.md](SCENARIOS.md).
 
@@ -114,7 +117,7 @@ All settings live in `.env`. Never commit it.
 
 The same provider and model are used for planning and for finding elements.
 
-- A full execution makes roughly 15 to 20 LLM requests, so a free tier with a small daily limit may allow only one run per day. Quotas are usually per model, so check the limits shown for your key.
+- A full execution makes about 7 LLM requests for this issue. The agent reuses an earlier answer only when the page and the question are exactly the same, and assertions checked at the same point share one request. The count is printed at the end of each run and saved in the report. Quotas are usually per model, so check the limits shown for your key.
 - Gemini Flash-Lite (`gemini-3.5-flash-lite`) produced the passing run shown above.
 - A larger model may locate elements more reliably. A smaller model can occasionally pick the wrong element, so spot-check the screenshots.
 
@@ -166,6 +169,7 @@ Everything produced by a run goes in [`evidence/`](evidence/):
 
 - `evidence/reports/test-plan-issue-<n>-<time>.json`: the generated plan
 - `evidence/reports/test-execution-issue-<n>-<time>.json` and `.md`: the execution report
+- `evidence/logs/test-execution-<time>.log`: one line per step, assertion and screenshot, including how each element was found
 - `evidence/screenshots/<run>/`: screenshots per scenario and step
 
 ## Project structure

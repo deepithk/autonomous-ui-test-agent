@@ -267,7 +267,7 @@ For each scenario the run records:
 - Scenario ID.
 - Acceptance criteria IDs.
 - Execution timestamp (in the report).
-- Step results: status, duration, and how the element was found.
+- Step results: status, duration, and how the element was found (also written line by line to the execution log).
 - Screenshot references.
 - Expected and actual value of every assertion.
 - Final status.
@@ -278,11 +278,11 @@ Evidence is stored under:
 ```
 evidence/
   reports/       plan and execution reports (JSON and Markdown)
+  logs/          one step-by-step execution log per run
   screenshots/   one folder per run
 ```
 
-A separate step-by-step execution log file and browser video are not produced
-yet.
+Browser video is not produced.
 
 ## 8. Acceptance Criteria Coverage
 
@@ -303,8 +303,9 @@ Coverage: 100%
 
 ## 9. Latest Execution Result
 
-Run of 2026-11-11 04:59 UTC. The plan was written by `gemini-3.6-flash`; the
-execution used `gemini-3.5-flash-lite`.
+Run of 2026-11-11 05:20 UTC. The plan was written by `gemini-3.6-flash`; the
+execution used `gemini-3.5-flash-lite` and made 7 LLM requests (3 answers
+were reused).
 
 | Scenario | Result | Assertions |
 |---|---|---|
@@ -323,8 +324,9 @@ execution used `gemini-3.5-flash-lite`.
 
 Evidence:
 
-- [Execution report](evidence/reports/test-execution-issue-1-2026-11-11T04-59-00-948Z.md)
-- [Screenshots](evidence/screenshots/2026-11-11T04-59-00-948Z/)
+- [Execution report](evidence/reports/test-execution-issue-1-2026-11-11T05-20-46-600Z.md)
+- [Execution log](evidence/logs/test-execution-2026-11-11T05-20-46-600Z.log)
+- [Screenshots](evidence/screenshots/2026-11-11T05-20-46-600Z/)
 
 ## 10. Important Implementation Note
 
