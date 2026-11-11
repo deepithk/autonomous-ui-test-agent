@@ -144,8 +144,12 @@ export function classifyMessage(message: string): {
   };
 }
 
-/** Messages in a finding are cut at this many characters. */
-const SUMMARY_LENGTH = 200;
+/**
+ * Messages in a finding are cut at this many characters. It matches the
+ * limit on step errors, so a step that failed and then failed to heal
+ * shows both messages in full.
+ */
+const SUMMARY_LENGTH = 400;
 
 /**
  * Turns a scenario that did not pass into findings, each with a

@@ -140,6 +140,24 @@ describe('analyzeFailures', () => {
     });
   });
 
+  it('keeps both the original problem and the failed self-healing in the summary', () => {
+    const message =
+      'No element matched "First product": the inventory is not visible. ' +
+      'Self-healing also failed: No alternative element found for ' +
+      '"First product": the page shows a login error.';
+
+    const findings = analyzeFailures(
+      scenario({
+        steps: [
+          { stepId: 'STEP-05', status: 'failed', durationMs: 5, error: message }
+        ]
+      })
+    );
+
+    expect(findings[0]?.summary).toContain(message);
+    expect(findings[0]?.summary).not.toContain('...');
+  });
+
   it('reports a provider problem as not an application defect', () => {
     const findings = analyzeFailures(
       scenario({
