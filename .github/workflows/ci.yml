@@ -26,6 +26,12 @@ jobs:
             os_label: Windows-x64
             node_version: '26.x'
 
+          # An older long-term-support Node, since the project runs on
+          # Node 20 and newer.
+          - os: windows-latest
+            os_label: Windows-x64
+            node_version: '22.x'
+
           - os: macos-26-intel
             os_label: macOS-Intel-x64
             node_version: '26.x'
