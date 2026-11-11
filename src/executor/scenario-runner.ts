@@ -291,20 +291,27 @@ export class ScenarioRunner {
           assertion => assertion.afterStepId === step.stepId
         );
 
-        for (const assertion of checkpoint) {
-          const assertionResult = await withDeadline(
-            assertionEngine.evaluate(assertion),
+        if (checkpoint.length > 0) {
+          // Assertions at one checkpoint share one page read and one
+          // element lookup request.
+          const checked = await withDeadline(
+            assertionEngine.evaluateMany(checkpoint),
             remaining(),
             scenarioTimeoutMs
           );
 
-          evaluated.set(assertion.assertionId, assertionResult);
+          for (const assertionResult of checked) {
+            evaluated.set(
+              assertionResult.assertionId,
+              assertionResult
+            );
 
-          this.emit({
-            type: 'assertion_finished',
-            scenarioId: scenario.scenarioId,
-            result: assertionResult
-          });
+            this.emit({
+              type: 'assertion_finished',
+              scenarioId: scenario.scenarioId,
+              result: assertionResult
+            });
+          }
         }
 
         if (checkpoint.length > 0) {

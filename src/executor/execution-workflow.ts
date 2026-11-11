@@ -10,6 +10,8 @@ import { validateTestPlan } from '../planner/test-plan-schema.js';
 
 import type { TestScenario } from '../planner/test-plan-schema.js';
 
+import type { LlmUsage } from './semantic-resolver.js';
+
 import type { ScenarioResult } from './scenario-runner.js';
 
 export type RunVerdict = 'PASSED' | 'FAILED' | 'ERROR';
@@ -28,6 +30,9 @@ export interface ExecutionRunReport {
 
   /** Step-by-step log of the run, relative to the evidence folder. */
   executionLogPath?: string;
+
+  /** LLM requests made while executing, and answers reused instead. */
+  llmUsage?: LlmUsage;
 
   source: PlanningRunReport['source'];
 
@@ -53,6 +58,9 @@ export interface ExecutionRunReport {
 export interface ExecutionWorkflowDependencies {
   /** Where the run's log is written, for the report. */
   executionLogPath?: string;
+
+  /** Reads the LLM usage once all scenarios have run. */
+  getLlmUsage?: () => LlmUsage;
 
   /** Provider and model used while executing, for the report. */
   executionLlm: PlanningRunReport['llm'];
@@ -170,6 +178,9 @@ export async function runExecutionWorkflow(
     ...(dependencies.executionLogPath !== undefined
       ? { executionLogPath: dependencies.executionLogPath }
       : {}),
+    ...(dependencies.getLlmUsage
+      ? { llmUsage: dependencies.getLlmUsage() }
+      : {}),
     source: plan.source,
     planningLlm: plan.llm,
     executionLlm: dependencies.executionLlm,
@@ -226,6 +237,12 @@ export function renderMarkdownReport(
     `- Executed with: ${report.executionLlm.provider} / ${report.executionLlm.model}`,
     ...(report.executionLogPath
       ? [`- Execution log: ${report.executionLogPath}`]
+      : []),
+    ...(report.llmUsage
+      ? [
+          `- LLM requests while executing: ${report.llmUsage.requests} ` +
+          `(${report.llmUsage.reused} answers reused)`
+        ]
       : []),
     '',
     '## Acceptance criteria',

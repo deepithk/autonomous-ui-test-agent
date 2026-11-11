@@ -56,6 +56,9 @@ export interface StepResult {
     element: string;
     ref: string;
     reason: string;
+
+    /** True when an earlier answer for the same page was reused. */
+    cached?: boolean;
   };
 
   captured?: {
@@ -306,7 +309,8 @@ export class StepExecutor {
           method: resolved.method,
           element: resolved.element,
           ref: resolved.ref,
-          reason: resolved.reason
+          reason: resolved.reason,
+          ...(resolved.cached ? { cached: true } : {})
         };
 
         return { resolved, elements };

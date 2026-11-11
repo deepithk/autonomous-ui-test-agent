@@ -115,6 +115,13 @@ async function main(): Promise<void> {
     }
   };
 
+  // Temporary provider trouble (such as a 503) is retried;
+  // quota errors are not.
+  const resolver = new SemanticResolver(new RetryingProvider(provider), {
+    maxOutputTokens: 2048,
+    temperature: 0
+  });
+
   const runner = new ScenarioRunner({
     onEvent: event => writeLog(formatLogEvent(event)),
 
@@ -125,12 +132,7 @@ async function main(): Promise<void> {
         actionTimeoutMs: config.ACTION_TIMEOUT_MS
       }),
 
-    // Temporary provider trouble (such as a 503) is retried;
-    // quota errors are not.
-    resolver: new SemanticResolver(new RetryingProvider(provider), {
-      maxOutputTokens: 2048,
-      temperature: 0
-    }),
+    resolver,
 
     secrets,
     allowedOrigin: config.TARGET_BASE_URL,
@@ -162,6 +164,8 @@ async function main(): Promise<void> {
 
   const { report, reportPath } = await runExecutionWorkflow({
     executionLogPath: path.relative(evidence.rootDir, logPath),
+
+    getLlmUsage: () => resolver.getUsage(),
 
     executionLlm: {
       provider: provider.providerName,
@@ -219,6 +223,13 @@ async function main(): Promise<void> {
     );
   }
 
+  const usage = resolver.getUsage();
+
+  writeLog(
+    `${new Date().toISOString()} LLM requests=${usage.requests} ` +
+    `answers_reused=${usage.reused}`
+  );
+
   writeLog(
     `${new Date().toISOString()} RUN END ${report.verdict} ` +
     `report=${path.basename(reportPath)}`
@@ -236,7 +247,12 @@ async function main(): Promise<void> {
     );
   }
 
-  console.info(`\nReport: ${reportPath}`);
+  console.info(
+    `\nLLM requests while executing: ${usage.requests} ` +
+    `(${usage.reused} answers reused)`
+  );
+
+  console.info(`Report: ${reportPath}`);
   console.info(`Log   : ${logPath}`);
   console.info('========================================\n');
 

@@ -263,6 +263,149 @@ describe('AssertionEngine', () => {
     expect(result.error).toMatch(/has not been captured/);
   });
 
+  it('checks assertions at one checkpoint with a single lookup request', async () => {
+    const { engine, llm, callTool } = setup({});
+
+    (llm.generateStructured as ReturnType<typeof vi.fn>).mockResolvedValue({
+      text: JSON.stringify({
+        results: [
+          { id: 'T1', refs: ['e53'], reason: 'Price.' },
+          { id: 'T2', refs: [], reason: 'No badge.' }
+        ]
+      }),
+      model: 'test'
+    });
+
+    const results = await engine.evaluateMany([
+      assertion({
+        assertionId: 'ASSERT-01',
+        type: 'text',
+        expectedValue: '$29.99'
+      }),
+      assertion({
+        assertionId: 'ASSERT-02',
+        type: 'element_count',
+        expectedValue: '0'
+      }),
+      assertion({
+        assertionId: 'ASSERT-03',
+        type: 'url',
+        expectedValue: '/inventory.html'
+      })
+    ]);
+
+    expect(results.map(result => result.status)).toEqual([
+      'passed',
+      'passed',
+      'passed'
+    ]);
+
+    expect(llm.generateStructured).toHaveBeenCalledTimes(1);
+
+    // One page read for all three assertions.
+    expect(callTool).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps results separate when only some assertions fail', async () => {
+    const { engine, llm } = setup({});
+
+    (llm.generateStructured as ReturnType<typeof vi.fn>).mockResolvedValue({
+      text: JSON.stringify({
+        results: [
+          { id: 'T1', refs: ['e65'], reason: 'Bike light price.' },
+          { id: 'T2', refs: ['e53'], reason: 'Backpack price.' }
+        ]
+      }),
+      model: 'test'
+    });
+
+    const results = await engine.evaluateMany([
+      assertion({
+        assertionId: 'ASSERT-01',
+        type: 'text',
+        expectedValue: '$29.99'
+      }),
+      assertion({
+        assertionId: 'ASSERT-02',
+        type: 'text',
+        expectedValue: '$29.99'
+      })
+    ]);
+
+    expect(
+      results.map(result => [result.status, result.actual])
+    ).toEqual([
+      ['failed', '$9.99'],
+      ['passed', '$29.99']
+    ]);
+  });
+
+  it('marks every lookup assertion as an error when the lookup fails, but still checks the url', async () => {
+    const { engine, llm } = setup({});
+
+    (llm.generateStructured as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('provider down')
+    );
+
+    const results = await engine.evaluateMany([
+      assertion({ assertionId: 'ASSERT-01', type: 'text', expectedValue: 'x' }),
+      assertion({
+        assertionId: 'ASSERT-02',
+        type: 'element_count',
+        expectedValue: '0'
+      }),
+      assertion({
+        assertionId: 'ASSERT-03',
+        type: 'url',
+        expectedValue: '/inventory.html'
+      })
+    ]);
+
+    expect(results.map(result => result.status)).toEqual([
+      'error',
+      'error',
+      'passed'
+    ]);
+
+    expect(results[0]?.error).toBe('provider down');
+  });
+
+  it('re-checks only the assertions that failed', async () => {
+    const { engine, llm } = setup({ recoveryAttempts: 1 });
+
+    (llm.generateStructured as ReturnType<typeof vi.fn>).mockResolvedValue({
+      text: JSON.stringify({
+        results: [
+          { id: 'T1', refs: ['e53'], reason: 'Price.' },
+          { id: 'T2', refs: [], reason: 'None.' }
+        ]
+      }),
+      model: 'test'
+    });
+
+    const results = await engine.evaluateMany([
+      assertion({
+        assertionId: 'ASSERT-01',
+        type: 'text',
+        expectedValue: '$29.99'
+      }),
+      assertion({
+        assertionId: 'ASSERT-02',
+        type: 'element_count',
+        expectedValue: '1'
+      })
+    ]);
+
+    expect(results.map(result => result.status)).toEqual([
+      'passed',
+      'failed'
+    ]);
+
+    // First pass asks about both. On the retry the page is identical,
+    // so the earlier answer for the one that still fails is reused.
+    expect(llm.generateStructured).toHaveBeenCalledTimes(1);
+  });
+
   it('re-checks with a fresh snapshot before failing', async () => {
     const { engine, callTool } = setup({
       refs: [],

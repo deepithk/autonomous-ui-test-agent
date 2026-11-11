@@ -7,7 +7,10 @@ import type { BrowserToolCaller } from './step-executor.js';
 
 import type { CaptureStore } from './capture-store.js';
 
-import type { SemanticResolver } from './semantic-resolver.js';
+import type {
+  ResolvedTarget,
+  SemanticResolver
+} from './semantic-resolver.js';
 
 import {
   extractPageUrl,
@@ -56,6 +59,14 @@ interface PageState {
   elements: SnapshotElement[];
 }
 
+/** An assertion with its placeholders already filled in. */
+interface Prepared {
+  index: number;
+  assertion: TestAssertion;
+  expected: string;
+  target: SemanticTarget;
+}
+
 const ABSENT_WORDS = new Set([
   'hidden',
   'not visible',
@@ -83,20 +94,82 @@ function urlsMatch(actual: string, expected: string): boolean {
 }
 
 /**
+ * Decides pass or fail from the elements that were found.
+ */
+function judge(
+  type: TestAssertion['type'],
+  expected: string,
+  found: ResolvedTarget[],
+  page: PageState
+): Outcome {
+  switch (type) {
+    case 'element_count':
+      return {
+        passed: found.length === Number(expected),
+        actual: String(found.length)
+      };
+
+    case 'visibility': {
+      const wantAbsent = ABSENT_WORDS.has(
+        expected.trim().toLowerCase()
+      );
+
+      return {
+        passed: wantAbsent ? found.length === 0 : found.length > 0,
+        actual: found.length > 0 ? 'visible' : 'not found'
+      };
+    }
+
+    case 'text':
+    case 'input_value': {
+      if (found.length === 0) {
+        return { passed: false, actual: 'element not found' };
+      }
+
+      const values = found.map(entry =>
+        normalize(
+          type === 'input_value'
+            ? (page.elements[entry.index]?.text ?? '')
+            : getElementText(page.elements, entry.index)
+        )
+      );
+
+      return {
+        passed: values.includes(normalize(expected)),
+        actual: values.join(' | ')
+      };
+    }
+
+    default:
+      throw new Error(`Cannot judge assertion type: ${type}`);
+  }
+}
+
+/**
  * Checks plan assertions against the live page.
  *
- * Every assertion reads a fresh snapshot, and its result records
- * what was expected and what was actually seen.
+ * Assertions that belong to the same checkpoint are checked together:
+ * the page is read once and the elements for all of them are looked up
+ * in one LLM request. Each result still records what was expected and
+ * what was actually seen.
  */
 export class AssertionEngine {
   constructor(private readonly options: AssertionEngineOptions) {}
 
   async evaluate(assertion: TestAssertion): Promise<AssertionResult> {
+    const [result] = await this.evaluateMany([assertion]);
+
+    return result as AssertionResult;
+  }
+
+  async evaluateMany(
+    assertions: TestAssertion[]
+  ): Promise<AssertionResult[]> {
     const startedAt = Date.now();
 
     const { captures, recoveryAttempts, browser } = this.options;
 
-    const result: AssertionResult = {
+    const results: AssertionResult[] = assertions.map(assertion => ({
       assertionId: assertion.assertionId,
       acceptanceCriterionId: assertion.acceptanceCriterionId,
       afterStepId: assertion.afterStepId,
@@ -106,56 +179,112 @@ export class AssertionEngine {
       actual: '',
       explanation: assertion.explanation,
       durationMs: 0
-    };
+    }));
 
-    try {
-      if (assertion.type === 'application_state') {
-        throw new Error(
-          'application_state assertions cannot be checked from the ' +
-          'page and need manual review.'
-        );
-      }
+    const fail = (index: number, error: unknown): void => {
+      const result = results[index] as AssertionResult;
 
-      const expected = captures.render(assertion.expectedValue);
-
-      const target = this.renderTarget(assertion.target);
-
-      result.expected = expected;
-
-      let outcome: Outcome | undefined;
-
-      for (let attempt = 0; attempt <= recoveryAttempts; attempt++) {
-        if (attempt > 0) {
-          await browser.callTool('browser_wait_for', { time: 1 });
-        }
-
-        outcome = await this.check(
-          assertion.type,
-          target,
-          expected,
-          await this.readPage()
-        );
-
-        if (outcome.passed) {
-          break;
-        }
-      }
-
-      const final = outcome as Outcome;
-
-      result.actual = final.actual;
-      result.status = final.passed ? 'passed' : 'failed';
-    } catch (error) {
       result.status = 'error';
 
       result.error = captures.redactAndShorten(
         error instanceof Error ? error.message : String(error)
       );
+    };
+
+    // Fill in placeholders. A problem here affects only that assertion.
+    let pending: Prepared[] = [];
+
+    assertions.forEach((assertion, index) => {
+      try {
+        if (assertion.type === 'application_state') {
+          throw new Error(
+            'application_state assertions cannot be checked from the ' +
+            'page and need manual review.'
+          );
+        }
+
+        const expected = captures.render(assertion.expectedValue);
+
+        (results[index] as AssertionResult).expected = expected;
+
+        if (
+          assertion.type === 'element_count' &&
+          (!Number.isInteger(Number(expected)) || Number(expected) < 0)
+        ) {
+          throw new Error(
+            `element_count expects a whole number, got "${expected}".`
+          );
+        }
+
+        pending.push({
+          index,
+          assertion,
+          expected,
+          target: this.renderTarget(assertion.target)
+        });
+      } catch (error) {
+        fail(index, error);
+      }
+    });
+
+    for (
+      let attempt = 0;
+      attempt <= recoveryAttempts && pending.length > 0;
+      attempt++
+    ) {
+      if (attempt > 0) {
+        await browser.callTool('browser_wait_for', { time: 1 });
+      }
+
+      let outcomes: Array<Outcome | Error>;
+
+      try {
+        outcomes = await this.checkMany(
+          pending,
+          await this.readPage()
+        );
+      } catch (error) {
+        // The page could not be read: nothing pending can be checked.
+        for (const item of pending) {
+          fail(item.index, error);
+        }
+
+        pending = [];
+
+        break;
+      }
+
+      const stillFailing: Prepared[] = [];
+
+      pending.forEach((item, position) => {
+        const outcome = outcomes[position] as Outcome | Error;
+
+        if (outcome instanceof Error) {
+          fail(item.index, outcome);
+
+          return;
+        }
+
+        const result = results[item.index] as AssertionResult;
+
+        result.actual = outcome.actual;
+        result.status = outcome.passed ? 'passed' : 'failed';
+
+        if (!outcome.passed) {
+          stillFailing.push(item);
+        }
+      });
+
+      pending = stillFailing;
     }
 
-    result.durationMs = Date.now() - startedAt;
+    const durationMs = Date.now() - startedAt;
 
-    return result;
+    for (const result of results) {
+      result.durationMs = durationMs;
+    }
+
+    return results;
   }
 
   private renderTarget(target: SemanticTarget): SemanticTarget {
@@ -187,96 +316,58 @@ export class AssertionEngine {
     };
   }
 
-  private async check(
-    type: TestAssertion['type'],
-    target: SemanticTarget,
-    expected: string,
+  /**
+   * One outcome per prepared assertion, in the same order. URL checks
+   * need no element lookup; every other type shares one lookup call.
+   */
+  private async checkMany(
+    prepared: Prepared[],
     page: PageState
-  ): Promise<Outcome> {
-    const { resolver } = this.options;
+  ): Promise<Array<Outcome | Error>> {
+    const outcomes: Array<Outcome | Error | undefined> = prepared.map(
+      item =>
+        item.assertion.type === 'url'
+          ? {
+              passed: urlsMatch(page.url, item.expected),
+              actual: page.url
+            }
+          : undefined
+    );
 
-    switch (type) {
-      case 'url':
-        return {
-          passed: urlsMatch(page.url, expected),
-          actual: page.url
-        };
+    const lookups = outcomes.flatMap((outcome, position) =>
+      outcome === undefined ? [position] : []
+    );
 
-      case 'element_count': {
-        const wanted = Number(expected);
+    if (lookups.length > 0) {
+      try {
+        const found = await this.options.resolver.resolveMany(
+          lookups.map(
+            position => (prepared[position] as Prepared).target
+          ),
+          page.elements,
+          page.yaml
+        );
 
-        if (!Number.isInteger(wanted) || wanted < 0) {
-          throw new Error(
-            `element_count expects a whole number, got "${expected}".`
+        lookups.forEach((position, order) => {
+          const item = prepared[position] as Prepared;
+
+          outcomes[position] = judge(
+            item.assertion.type,
+            item.expected,
+            found[order] as ResolvedTarget[],
+            page
           );
+        });
+      } catch (error) {
+        const failure =
+          error instanceof Error ? error : new Error(String(error));
+
+        for (const position of lookups) {
+          outcomes[position] = failure;
         }
-
-        const found = await resolver.resolveAll(
-          target,
-          page.elements,
-          page.yaml
-        );
-
-        return {
-          passed: found.length === wanted,
-          actual: String(found.length)
-        };
-      }
-
-      case 'visibility': {
-        const found = await resolver.resolveAll(
-          target,
-          page.elements,
-          page.yaml
-        );
-
-        const wantAbsent = ABSENT_WORDS.has(
-          expected.trim().toLowerCase()
-        );
-
-        return {
-          passed: wantAbsent ? found.length === 0 : found.length > 0,
-          actual: found.length > 0 ? 'visible' : 'not found'
-        };
-      }
-
-      case 'text':
-      case 'input_value': {
-        const found = await resolver.resolveAll(
-          target,
-          page.elements,
-          page.yaml
-        );
-
-        if (found.length === 0) {
-          return { passed: false, actual: 'element not found' };
-        }
-
-        const values = found.map(entry =>
-          normalize(
-            type === 'input_value'
-              ? (page.elements[entry.index]?.text ?? '')
-              : getElementText(page.elements, entry.index)
-          )
-        );
-
-        return {
-          passed: values.includes(normalize(expected)),
-          actual: values.join(' | ')
-        };
-      }
-
-      case 'application_state':
-        // Rejected in evaluate() before the page is read.
-        throw new Error(
-          'application_state assertions need manual review.'
-        );
-
-      default: {
-        const unsupported: never = type;
-
-        throw new Error(`Unsupported assertion type: ${unsupported}`);
       }
     }
+
+    return outcomes as Array<Outcome | Error>;
   }
 }

@@ -41,7 +41,8 @@ export function formatLogEvent(
 
       const found = result.resolution
         ? ` -> ${oneLine(result.resolution.element)} ` +
-          `(${METHOD_TEXT[result.resolution.method]})`
+          `(${METHOD_TEXT[result.resolution.method]}` +
+          `${result.resolution.cached ? ', answer reused' : ''})`
         : '';
 
       const captured = result.captured

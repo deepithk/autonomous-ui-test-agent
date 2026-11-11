@@ -176,6 +176,241 @@ describe('SemanticResolver', () => {
     ).rejects.toBeInstanceOf(SemanticResolverError);
   });
 
+  describe('reusing answers', () => {
+    it('reuses an answer for the same page and question', async () => {
+      const { llm, generateStructured } = createLlm(
+        JSON.stringify({ ref: 'e124', reason: 'Cart button.' })
+      );
+
+      const resolver = new SemanticResolver(llm);
+
+      const first = await resolver.resolve(
+        target({ description: 'Shopping cart icon' }),
+        'click',
+        elements,
+        INVENTORY_YAML
+      );
+
+      const second = await resolver.resolve(
+        target({ description: 'Shopping cart icon' }),
+        'click',
+        elements,
+        INVENTORY_YAML
+      );
+
+      expect(first.cached).toBeUndefined();
+      expect(second).toMatchObject({ ref: 'e124', cached: true });
+      expect(generateStructured).toHaveBeenCalledTimes(1);
+      expect(resolver.getUsage()).toEqual({ requests: 1, reused: 1 });
+    });
+
+    it('asks again when the page is different', async () => {
+      const { llm, generateStructured } = createLlm(
+        JSON.stringify({ ref: 'e124', reason: 'Cart button.' })
+      );
+
+      const resolver = new SemanticResolver(llm);
+
+      const changed = `${INVENTORY_YAML}\n  - text: another line`;
+
+      await resolver.resolve(
+        target({ description: 'Shopping cart icon' }),
+        'click',
+        elements,
+        INVENTORY_YAML
+      );
+
+      await resolver.resolve(
+        target({ description: 'Shopping cart icon' }),
+        'click',
+        parseSnapshot(changed),
+        changed
+      );
+
+      expect(generateStructured).toHaveBeenCalledTimes(2);
+    });
+
+    it('asks again when the question is different', async () => {
+      const { llm, generateStructured } = createLlm(
+        JSON.stringify({ ref: 'e124', reason: 'Cart button.' })
+      );
+
+      const resolver = new SemanticResolver(llm);
+
+      await resolver.resolve(
+        target({ description: 'Shopping cart icon' }),
+        'click',
+        elements,
+        INVENTORY_YAML
+      );
+
+      await resolver.resolve(
+        target({ description: 'Cart badge' }),
+        'click',
+        elements,
+        INVENTORY_YAML
+      );
+
+      expect(generateStructured).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not remember failures', async () => {
+      const { llm, generateStructured } = createLlm(
+        JSON.stringify({ ref: '', reason: 'Nothing.' })
+      );
+
+      const resolver = new SemanticResolver(llm);
+
+      for (let attempt = 0; attempt < 2; attempt++) {
+        await expect(
+          resolver.resolve(target(), 'click', elements, INVENTORY_YAML)
+        ).rejects.toThrow(/Nothing/);
+      }
+
+      expect(generateStructured).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('resolveMany', () => {
+    const first = target({ description: 'Add to cart for Backpack' });
+    const second = target({ description: 'Cart badge' });
+
+    it('answers several targets in one request', async () => {
+      const { llm, generateStructured } = createLlm(
+        JSON.stringify({
+          results: [
+            { id: 'T1', refs: ['e54'], reason: 'Backpack button.' },
+            { id: 'T2', refs: [], reason: 'No badge.' }
+          ]
+        })
+      );
+
+      const resolver = new SemanticResolver(llm);
+
+      const found = await resolver.resolveMany(
+        [first, second],
+        elements,
+        INVENTORY_YAML
+      );
+
+      expect(found.map(list => list.map(entry => entry.ref))).toEqual([
+        ['e54'],
+        []
+      ]);
+
+      expect(generateStructured).toHaveBeenCalledTimes(1);
+
+      const request = generateStructured.mock.calls[0]?.[0];
+
+      expect(request.prompt).toContain('T1:');
+      expect(request.prompt).toContain('T2:');
+      expect(resolver.getUsage().requests).toBe(1);
+    });
+
+    it('only asks about targets it does not already know', async () => {
+      const { llm, generateStructured } = createLlm(
+        JSON.stringify({
+          results: [
+            { id: 'T1', refs: ['e54'], reason: 'Backpack button.' },
+            { id: 'T2', refs: [], reason: 'No badge.' }
+          ]
+        })
+      );
+
+      const resolver = new SemanticResolver(llm);
+
+      await resolver.resolveMany([first, second], elements, INVENTORY_YAML);
+
+      const again = await resolver.resolveMany(
+        [first, second],
+        elements,
+        INVENTORY_YAML
+      );
+
+      expect(again[0]?.[0]).toMatchObject({ ref: 'e54', cached: true });
+      expect(generateStructured).toHaveBeenCalledTimes(1);
+      expect(resolver.getUsage()).toEqual({ requests: 1, reused: 2 });
+    });
+
+    it('treats a missing answer as an error, not as "nothing found"', async () => {
+      const { llm } = createLlm(
+        JSON.stringify({
+          results: [{ id: 'T1', refs: ['e54'], reason: 'Backpack.' }]
+        })
+      );
+
+      await expect(
+        new SemanticResolver(llm).resolveMany(
+          [first, second],
+          elements,
+          INVENTORY_YAML
+        )
+      ).rejects.toThrow(/did not answer for "Cart badge"/);
+    });
+
+    it('rejects refs that are not in the snapshot', async () => {
+      const { llm } = createLlm(
+        JSON.stringify({
+          results: [
+            { id: 'T1', refs: ['e999'], reason: 'Guess.' },
+            { id: 'T2', refs: [], reason: 'None.' }
+          ]
+        })
+      );
+
+      await expect(
+        new SemanticResolver(llm).resolveMany(
+          [first, second],
+          elements,
+          INVENTORY_YAML
+        )
+      ).rejects.toThrow(/not in the snapshot/);
+    });
+
+    it('does not cache anything when the batch is rejected', async () => {
+      const { llm, generateStructured } = createLlm(
+        JSON.stringify({
+          results: [{ id: 'T1', refs: [], reason: 'None.' }]
+        })
+      );
+
+      const resolver = new SemanticResolver(llm);
+
+      for (let attempt = 0; attempt < 2; attempt++) {
+        await expect(
+          resolver.resolveMany([first, second], elements, INVENTORY_YAML)
+        ).rejects.toThrow();
+      }
+
+      expect(generateStructured).toHaveBeenCalledTimes(2);
+    });
+
+    it('uses the single-target request when only one is unknown', async () => {
+      const { llm, generateStructured } = createLlm(
+        JSON.stringify({ refs: ['e54'], reason: 'Backpack button.' })
+      );
+
+      const found = await new SemanticResolver(llm).resolveMany(
+        [first],
+        elements,
+        INVENTORY_YAML
+      );
+
+      expect(found[0]?.[0]?.ref).toBe('e54');
+      expect(generateStructured).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses the plan fields when there is no LLM', async () => {
+      const found = await new SemanticResolver(null).resolveMany(
+        [target({ visibleText: 'Add to cart' }), target()],
+        elements,
+        INVENTORY_YAML
+      );
+
+      expect(found.map(list => list.length)).toEqual([2, 0]);
+    });
+  });
+
   describe('resolveAll', () => {
     it('returns every ref the LLM lists', async () => {
       const { llm } = createLlm(
