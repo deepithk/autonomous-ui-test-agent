@@ -237,7 +237,8 @@ async function main(): Promise<void> {
     writeLog(
       `${new Date().toISOString()} [${criterion.id}] CRITERION ` +
       `${criterion.verdict} ${criterion.assertionsPassed}/` +
-      `${criterion.assertionsTotal}`
+      `${criterion.assertionsTotal}` +
+      (criterion.partlyChecked ? ' (partly checked)' : '')
     );
   }
 
@@ -261,7 +262,8 @@ async function main(): Promise<void> {
     console.info(
       `${criterion.id}  ${criterion.verdict.padEnd(6)} ` +
       `${criterion.assertionsPassed}/${criterion.assertionsTotal} ` +
-      `${criterion.title}`
+      `${criterion.title}` +
+      (criterion.partlyChecked ? '  (partly checked)' : '')
     );
   }
 

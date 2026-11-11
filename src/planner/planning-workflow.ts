@@ -4,6 +4,15 @@ import type {
   AcceptanceCriterion
 } from '../github/acceptance-criteria-parser.js';
 
+import {
+  coverageFeedback,
+  findCoverageGaps
+} from './criteria-coverage.js';
+
+import type { CoverageGap } from './criteria-coverage.js';
+
+import type { PlanRequestOptions } from './test-planner.js';
+
 import type {
   GeneratedTestPlan
 } from './test-plan-schema.js';
@@ -38,14 +47,36 @@ export interface PlanningRunReport {
 
   generatedPlan: GeneratedTestPlan;
 
+  /**
+   * Conditions of the acceptance criteria that no assertion checks, and
+   * what happened when the planner was asked to fix that.
+   */
+  coverage: {
+    gaps: CoverageGap[];
+    replan: ReplanOutcome;
+  };
+
   executionStatus: 'NOT_EXECUTED';
 }
+
+/**
+ * not-needed:     the first plan checked every condition.
+ * improved:       a second attempt, given the gaps, checked more.
+ * no-improvement: a second attempt was no better, so the first was kept.
+ * failed:         the second attempt failed, so the first was kept.
+ */
+export type ReplanOutcome =
+  | 'not-needed'
+  | 'improved'
+  | 'no-improvement'
+  | 'failed';
 
 export interface PlanningWorkflowDependencies {
   readIssue: () => Promise<IssueReadResult>;
 
   generatePlan: (
-    criteria: readonly AcceptanceCriterion[]
+    criteria: readonly AcceptanceCriterion[],
+    request?: PlanRequestOptions
   ) => Promise<GeneratedTestPlan>;
 
   saveReport: (
@@ -108,9 +139,51 @@ export async function runPlanningWorkflow(
   }
 
   // Step 4: Generate the dynamic test plan.
-  const generatedPlan = await dependencies.generatePlan(
-    issueResult.acceptanceCriteria
+  const request: PlanRequestOptions = {
+    issueTitle: issueResult.issue.title
+  };
+
+  let generatedPlan = await dependencies.generatePlan(
+    issueResult.acceptanceCriteria,
+    request
   );
+
+  // Step 4b: Check that every condition of every criterion is checked.
+  // The planner is an LLM and sometimes leaves one out. If it did, it
+  // gets one more attempt with the gaps pointed out. Whatever is still
+  // missing is recorded, so a PASSED result cannot overstate what was
+  // verified.
+  let gaps = findCoverageGaps(
+    issueResult.acceptanceCriteria,
+    generatedPlan
+  );
+
+  let replan: ReplanOutcome = 'not-needed';
+
+  if (gaps.length > 0) {
+    try {
+      const retry = await dependencies.generatePlan(
+        issueResult.acceptanceCriteria,
+        { ...request, feedback: coverageFeedback(gaps) }
+      );
+
+      const retryGaps = findCoverageGaps(
+        issueResult.acceptanceCriteria,
+        retry
+      );
+
+      if (retryGaps.length < gaps.length) {
+        generatedPlan = retry;
+        gaps = retryGaps;
+        replan = 'improved';
+      } else {
+        replan = 'no-improvement';
+      }
+    } catch {
+      // The first plan is valid; keep it and say what it leaves open.
+      replan = 'failed';
+    }
+  }
 
   // Step 5: Prepare the evidence report.
   const report: PlanningRunReport = {
@@ -141,6 +214,8 @@ export async function runPlanningWorkflow(
     acceptanceCriteria: issueResult.acceptanceCriteria,
 
     generatedPlan,
+
+    coverage: { gaps, replan },
 
     executionStatus: 'NOT_EXECUTED'
   };

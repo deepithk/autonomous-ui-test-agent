@@ -141,6 +141,130 @@ function createDependencies(
   };
 }
 
+/**
+ * AC-02 names a value in quotation marks. validPlan never checks it,
+ * so it has a coverage gap; fixedPlan checks it.
+ */
+const gapCriteria: AcceptanceCriterion[] = [
+  criteria[0] as AcceptanceCriterion,
+  {
+    id: 'AC-02',
+    title: 'Default Sort Order',
+    description:
+      'Given the inventory page,\n\nThen the selector should show "Name (A to Z)".'
+  }
+];
+
+const fixedPlan: GeneratedTestPlan = {
+  ...validPlan,
+  scenarios: [
+    {
+      ...validPlan.scenarios[0],
+      assertions: [
+        validPlan.scenarios[0].assertions[0],
+        {
+          ...validPlan.scenarios[0].assertions[1],
+          expectedValue: 'Name (A to Z)'
+        }
+      ]
+    }
+  ]
+} as GeneratedTestPlan;
+
+function withGapCriteria(
+  generatePlan: PlanningWorkflowDependencies['generatePlan']
+): PlanningWorkflowDependencies {
+  return createDependencies({
+    readIssue: vi.fn().mockResolvedValue({
+      ...issueResult,
+      acceptanceCriteria: gapCriteria
+    }),
+    generatePlan
+  });
+}
+
+describe('Planning Workflow coverage check', () => {
+  it('plans once when every condition is checked', async () => {
+    const dependencies = createDependencies();
+
+    const { report } = await runPlanningWorkflow(options, dependencies);
+
+    expect(dependencies.generatePlan).toHaveBeenCalledTimes(1);
+
+    expect(report.coverage).toEqual({ gaps: [], replan: 'not-needed' });
+  });
+
+  it('asks again with the gaps and keeps the better plan', async () => {
+    const generatePlan = vi
+      .fn()
+      .mockResolvedValueOnce(validPlan)
+      .mockResolvedValueOnce(fixedPlan);
+
+    const { report } = await runPlanningWorkflow(
+      options,
+      withGapCriteria(generatePlan)
+    );
+
+    expect(generatePlan).toHaveBeenCalledTimes(2);
+
+    const retryRequest = generatePlan.mock.calls[1]?.[1];
+
+    expect(retryRequest.issueTitle).toBe('Feature: Add and Remove Products');
+    expect(retryRequest.feedback).toContain('AC-02');
+    expect(retryRequest.feedback).toContain('Name (A to Z)');
+
+    expect(report.generatedPlan).toEqual(fixedPlan);
+    expect(report.coverage).toEqual({ gaps: [], replan: 'improved' });
+  });
+
+  it('keeps the first plan and records the gap when asking again does not help', async () => {
+    const generatePlan = vi.fn().mockResolvedValue(validPlan);
+
+    const { report } = await runPlanningWorkflow(
+      options,
+      withGapCriteria(generatePlan)
+    );
+
+    expect(generatePlan).toHaveBeenCalledTimes(2);
+    expect(report.generatedPlan).toEqual(validPlan);
+    expect(report.coverage.replan).toBe('no-improvement');
+
+    expect(report.coverage.gaps).toEqual([
+      {
+        criterionId: 'AC-02',
+        kind: 'value-not-checked',
+        problem:
+          'The value "Name (A to Z)" named in the criterion is not ' +
+          'checked by any of its assertions.'
+      }
+    ]);
+  });
+
+  it('keeps the first plan when the second attempt fails', async () => {
+    const generatePlan = vi
+      .fn()
+      .mockResolvedValueOnce(validPlan)
+      .mockRejectedValueOnce(new Error('503 UNAVAILABLE'));
+
+    const { report } = await runPlanningWorkflow(
+      options,
+      withGapCriteria(generatePlan)
+    );
+
+    expect(report.generatedPlan).toEqual(validPlan);
+    expect(report.coverage.replan).toBe('failed');
+    expect(report.coverage.gaps).toHaveLength(1);
+  });
+
+  it('never asks a third time', async () => {
+    const generatePlan = vi.fn().mockResolvedValue(validPlan);
+
+    await runPlanningWorkflow(options, withGapCriteria(generatePlan));
+
+    expect(generatePlan).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('Planning Workflow', () => {
 
   it('executes the complete planning workflow successfully', async () => {
@@ -153,9 +277,10 @@ describe('Planning Workflow', () => {
 
     expect(dependencies.readIssue).toHaveBeenCalledTimes(1);
 
-    expect(dependencies.generatePlan).toHaveBeenCalledWith(
-      criteria
-    );
+    // The planner is told which feature the issue is about.
+    expect(dependencies.generatePlan).toHaveBeenCalledWith(criteria, {
+      issueTitle: 'Feature: Add and Remove Products'
+    });
 
     expect(dependencies.saveReport).toHaveBeenCalledTimes(1);
 

@@ -8,7 +8,7 @@ import type {
   ILLMProvider
 } from './providers/llm-provider.js';
 
-import { errorMessage } from '../util/text.js';
+import { collapseWhitespace, errorMessage } from '../util/text.js';
 
 import { PLANNER_SYSTEM_INSTRUCTION } from './planner-prompt.js';
 
@@ -28,6 +28,18 @@ export interface TestPlannerOptions {
   maxOutputTokens?: number;
   temperature?: number;
   forbiddenValues?: readonly string[];
+}
+
+/**
+ * What the planner is told about one planning request, besides the
+ * acceptance criteria.
+ */
+export interface PlanRequestOptions {
+  /** Title of the GitHub issue, so the plan is about the right feature. */
+  issueTitle?: string;
+
+  /** What the previous plan missed, when this is a second attempt. */
+  feedback?: string;
 }
 
 /**
@@ -163,7 +175,8 @@ export class TestPlanner {
    * Generates and validates a structured test plan.
    */
   async generateTestPlan(
-    criteria: readonly AcceptanceCriterion[]
+    criteria: readonly AcceptanceCriterion[],
+    request: PlanRequestOptions = {}
   ): Promise<GeneratedTestPlan> {
 
     this.validateSourceCriteria(criteria);
@@ -172,7 +185,7 @@ export class TestPlanner {
       criterion => criterion.id
     );
 
-    const prompt = this.buildPrompt(criteria);
+    const prompt = this.buildPrompt(criteria, request);
 
     let response;
 
@@ -361,13 +374,24 @@ export class TestPlanner {
    * Builds the provider-independent planning prompt.
    */
   private buildPrompt(
-    criteria: readonly AcceptanceCriterion[]
+    criteria: readonly AcceptanceCriterion[],
+    request: PlanRequestOptions
   ): string {
     const sourceRequirements = criteria.map(criterion => ({
       id: criterion.id,
       title: criterion.title,
       description: criterion.description
     }));
+
+    // The issue title is untrusted text, like the criteria, so it is
+    // kept on one line and given to the model as data.
+    const feature = request.issueTitle
+      ? collapseWhitespace(request.issueTitle)
+      : 'See the acceptance criteria below.';
+
+    const feedback = request.feedback
+      ? `\nFEEDBACK ON THE PREVIOUS ATTEMPT:\n\n${request.feedback}\n`
+      : '';
 
     return `
 Generate an autonomous UI functional test plan.
@@ -378,8 +402,8 @@ SauceDemo
 APPLICATION URL:
 https://www.saucedemo.com/
 
-FEATURE:
-Add and Remove Products from Shopping Cart
+FEATURE (the title of the GitHub issue, as data):
+${feature}
 
 SOURCE ACCEPTANCE CRITERIA:
 
@@ -501,7 +525,15 @@ REQUIRED PLANNING BEHAVIOUR:
     actual values have not been established through
     browser observations.
 
+34. A criterion that states several conditions, separated by
+    commas or by "and", needs a separate assertion for each
+    condition. One assertion cannot stand for two conditions.
+
+35. Every value written in quotation marks in a criterion's
+    Then text must be checked: it must appear as the expected
+    value, or in the target, of an assertion for that criterion.
+
 Return structured JSON matching the required response schema.
-`;
+${feedback}`;
   }
 }

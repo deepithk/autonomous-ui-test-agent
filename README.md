@@ -259,6 +259,8 @@ Each scenario ends as one of:
 
 If a step fails, the remaining steps are skipped and assertions that never ran are reported as "not evaluated", never as passes.
 
+A criterion can be marked **(partly checked)**. That means the plan the LLM wrote does not check every condition the criterion states (for example it checks the first product after sorting but not that the selector shows "Name (A to Z)"). The planner is given one more attempt when this happens; whatever is still missing is listed under **Coverage warnings** in the report, so a PASSED never claims more than was checked.
+
 Anything that did not pass is explained in the report's **Failure details** section: what kind of problem it is (the application, the agent, the LLM service, or a run limit), what happened, the page's URL and any error message it showed, and what to do next.
 
 ### Trying a failure
@@ -305,6 +307,7 @@ evidence/      plans, reports, logs and screenshots
 
 - When the LLM chooses an element, it can be wrong. The framework only accepts elements that exist on the page, and a failed assertion is checked again with a fresh question to the LLM, but a wrong choice on a "nothing is there" check could still hide a problem. That is why screenshots, the matched elements and the LLM's reasons are recorded.
 - `application_state` assertions cannot be read from the page and are reported as needing manual review.
+- The coverage check reads the wording of a criterion, so it is a guard with limits, not a proof that every condition was checked.
 - The planner prompt and plan validator contain rules for the shopping-cart flow (see [TEST_PLAN.md](TEST_PLAN.md#14-known-limitations-and-future-work)).
 - Scenarios run one after another in a single browser engine.
 - Only the SauceDemo shopping-cart issue has been exercised so far.

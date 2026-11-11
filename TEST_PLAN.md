@@ -152,9 +152,32 @@ Local validation checks, independently of the LLM:
 - Captured values are only used after the step that captures them.
 - Add to cart and Remove steps must name the selected product.
 - No credentials appear anywhere in the plan.
+- Every condition of every criterion is checked (coverage), see below.
 - A step can only use the eight allowed actions (navigate, observe, click,
   fill, type, press_key, select_option, wait_for), so the plan can never
   contain raw JavaScript, XPath or CSS.
+
+**Coverage check.** A plan can pass the checks above and still leave out half
+of a criterion: for "the sort selector should show "Name (A to Z)" and the
+first product should be "Sauce Labs Backpack"", a plan that only asserts the
+product would have every criterion covered, yet one condition never checked.
+So the plan is also checked for how much of each criterion it covers
+(`src/planner/criteria-coverage.ts`):
+
+- every value written in quotation marks in the criterion's outcome (the text
+  after "Then") must appear in one of that criterion's assertions, as the
+  expected value or in the target; and
+- a criterion that states N conditions, separated by sentences, commas or
+  "and", must have at least N assertions.
+
+If the plan falls short, the planner is asked once more, with exactly what was
+missed, and the better of the two plans is kept. Anything still missing is
+recorded in the plan report and, at run time, shown in the execution report:
+the criterion is marked "(partly checked)" and the gap is listed under
+**Coverage warnings**, so a PASSED never claims more than was verified. The
+check is worked out from the saved plan each time, so it also applies to plans
+written before it existed. It reads the wording of the criterion, so it is a
+guard with known limits (section 14), not a proof.
 
 ### 6.3 Scenario Runner (`src/executor`)
 
@@ -306,7 +329,9 @@ Scenarios end as:
   assertion that could not run. This is the equivalent of "blocked".
 
 Each acceptance criterion gets a verdict of PASSED, FAILED or ERROR from the
-assertions written for it. The whole run is FAILED if any scenario failed,
+assertions written for it. A criterion whose plan leaves a condition
+unchecked is marked "(partly checked)", and the report lists the unchecked
+conditions under Coverage warnings. The whole run is FAILED if any scenario failed,
 otherwise ERROR if any scenario errored, otherwise PASSED. An assertion that
 never ran is never counted as a pass.
 
@@ -380,7 +405,10 @@ a small output budget and a strict response schema.
    answer, so one wrong answer is not repeated.
 5. Expected values come from the plan and from values the agent captured on
    the page, never from the LLM's own claims.
-6. Evidence lets a person check the result: expected and actual value for
+6. The plan itself is checked for coverage (section 6.2): a condition of a
+   criterion that no assertion checks is caught in code, gets one more
+   planning attempt, and is otherwise shown as "partly checked".
+7. Evidence lets a person check the result: expected and actual value for
    every assertion, the elements the lookup found, a screenshot after every
    step, and the LLM's stated reason for each element it chose.
 
@@ -597,9 +625,15 @@ key and the live site; they are what the RFQA workflow does.
   accepts elements that exist on the page, but a wrong choice on an
   "is it absent" check could hide a problem. This is why a screenshot is
   saved after every step.
+- The coverage check reads the wording of a criterion: quoted values, and
+  conditions separated by sentences, commas or "and". A criterion that states
+  its conditions in another way (for example a list of items inside one
+  sentence without commas) may hide conditions it cannot see, and a plan that
+  deliberately merges two conditions into one assertion is reported as short.
 - The planner prompt and the plan validator contain rules written for this
   shopping-cart flow: the capture names for the selected product, "Add to
-  cart" and "Remove" targeting, and the two login placeholders. The agent
+  cart" and "Remove" targeting, the two login placeholders, and rules that
+  name AC-05 and AC-06 of the example issue. The agent
   core (resolver, assertions, runner, reports) is generic, but pointing the
   agent at a different application would mean moving those rules into a
   per-application profile. This was left out on purpose to keep the project

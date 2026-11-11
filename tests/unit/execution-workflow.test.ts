@@ -281,16 +281,89 @@ describe('runExecutionWorkflow', () => {
         title: 'Login works',
         verdict: 'PASSED',
         assertionsPassed: 1,
-        assertionsTotal: 1
+        assertionsTotal: 1,
+        partlyChecked: false
       },
       {
         id: 'AC-02',
         title: 'Cart | badge',
         verdict: 'FAILED',
         assertionsPassed: 0,
-        assertionsTotal: 1
+        assertionsTotal: 1,
+        partlyChecked: false
       }
     ]);
+  });
+
+  describe('coverage of the criteria', () => {
+    /**
+     * AC-02 names the value "7", but the plan's assertion expects a URL,
+     * so that condition of AC-02 is never checked.
+     */
+    const planReportWithGap = (): PlanningRunReport => ({
+      ...makePlanReport(),
+      acceptanceCriteria: [
+        { id: 'AC-01', title: 'Login works', description: 'd' },
+        {
+          id: 'AC-02',
+          title: 'Cart | badge',
+          description: 'Given a product,\n\nThen the badge shows "7".'
+        }
+      ]
+    });
+
+    it('marks a criterion with an unchecked condition as partly checked', async () => {
+      const { run } = setup(
+        [{ status: 'passed' }, { status: 'passed' }],
+        planReportWithGap()
+      );
+
+      const { report } = await run();
+
+      expect(report.verdict).toBe('PASSED');
+
+      expect(report.criteria.map(c => [c.id, c.partlyChecked])).toEqual([
+        ['AC-01', false],
+        ['AC-02', true]
+      ]);
+
+      expect(report.coverageGaps).toEqual([
+        {
+          criterionId: 'AC-02',
+          kind: 'value-not-checked',
+          problem:
+            'The value "7" named in the criterion is not checked by any ' +
+            'of its assertions.'
+        }
+      ]);
+    });
+
+    it('says so in the report next to the verdict', async () => {
+      const { run } = setup(
+        [{ status: 'passed' }, { status: 'passed' }],
+        planReportWithGap()
+      );
+
+      const markdown = renderMarkdownReport((await run()).report);
+
+      expect(markdown).toContain(
+        '| AC-02 Cart \\| badge | PASSED (partly checked) | 1/1 |'
+      );
+
+      expect(markdown).toContain('| AC-01 Login works | PASSED | 1/1 |');
+      expect(markdown).toContain('## Coverage warnings');
+      expect(markdown).toContain('- AC-02: The value "7" named');
+    });
+
+    it('shows no warning when every condition is checked', async () => {
+      const { run } = setup([{ status: 'passed' }, { status: 'passed' }]);
+
+      const { report } = await run();
+
+      expect(report.coverageGaps).toEqual([]);
+      expect(renderMarkdownReport(report)).not.toContain('Coverage warnings');
+      expect(renderMarkdownReport(report)).not.toContain('partly checked');
+    });
   });
 
   it('reports ERROR when nothing failed but a scenario could not be checked', async () => {

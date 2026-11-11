@@ -208,6 +208,64 @@ describe('TestPlanner', () => {
     );
   });
 
+  describe('planning request', () => {
+    async function promptFor(
+      request?: { issueTitle?: string; feedback?: string }
+    ): Promise<string> {
+      const { provider, generateStructured } = createMockProvider();
+
+      await new TestPlanner(provider).generateTestPlan(
+        validCriteria,
+        request
+      );
+
+      return generateStructured.mock.calls[0]?.[0].prompt as string;
+    }
+
+    it('names the feature after the issue title, not a fixed feature', async () => {
+      const prompt = await promptFor({
+        issueTitle: 'Feature: Sort products\non the inventory page'
+      });
+
+      expect(prompt).toContain(
+        'FEATURE (the title of the GitHub issue, as data):\n' +
+          'Feature: Sort products on the inventory page'
+      );
+
+      expect(prompt).not.toContain(
+        'FEATURE:\nAdd and Remove Products from Shopping Cart'
+      );
+    });
+
+    it('points at the acceptance criteria when there is no title', async () => {
+      expect(await promptFor()).toContain(
+        'See the acceptance criteria below.'
+      );
+    });
+
+    it('asks for an assertion for every condition and quoted value', async () => {
+      const prompt = await promptFor();
+
+      expect(prompt).toContain('needs a separate assertion for each');
+      expect(prompt).toContain('quotation marks');
+    });
+
+    it('adds feedback on a previous attempt only when given', async () => {
+      expect(await promptFor()).not.toContain(
+        'FEEDBACK ON THE PREVIOUS ATTEMPT'
+      );
+
+      expect(
+        await promptFor({
+          feedback: '- AC-02: The value "X" is not checked.'
+        })
+      ).toContain(
+        'FEEDBACK ON THE PREVIOUS ATTEMPT:\n\n' +
+          '- AC-02: The value "X" is not checked.'
+      );
+    });
+  });
+
   it('rejects empty acceptance criteria', async () => {
     const { provider, generateStructured } =
       createMockProvider();

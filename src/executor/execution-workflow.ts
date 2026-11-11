@@ -10,6 +10,10 @@ import { validateTestPlan } from '../planner/test-plan-schema.js';
 
 import type { TestScenario } from '../planner/test-plan-schema.js';
 
+import { findCoverageGaps } from '../planner/criteria-coverage.js';
+
+import type { CoverageGap } from '../planner/criteria-coverage.js';
+
 import { collapseWhitespace } from '../util/text.js';
 
 import { analyzeFailures } from './failure-analysis.js';
@@ -31,6 +35,12 @@ export interface CriterionVerdict {
   verdict: RunVerdict;
   assertionsPassed: number;
   assertionsTotal: number;
+
+  /**
+   * True when the plan leaves a condition of the criterion unchecked, so
+   * the verdict covers only the conditions that were checked.
+   */
+  partlyChecked: boolean;
 }
 
 /**
@@ -67,6 +77,23 @@ function collectHealedSteps(results: ScenarioResult[]): HealedStep[] {
         : []
     )
   );
+}
+
+function renderCoverageGaps(gaps: CoverageGap[]): string[] {
+  if (gaps.length === 0) {
+    return [];
+  }
+
+  return [
+    '',
+    '## Coverage warnings',
+    '',
+    'These conditions of the acceptance criteria are not checked by any ' +
+      'assertion in the plan. The verdict of such a criterion covers only ' +
+      'the conditions that were checked.',
+    '',
+    ...gaps.map(gap => `- ${gap.criterionId}: ${gap.problem}`)
+  ];
 }
 
 function renderHealedSteps(healing: HealedStep[]): string[] {
@@ -124,6 +151,9 @@ export interface ExecutionRunReport {
   };
 
   criteria: CriterionVerdict[];
+
+  /** Conditions of the criteria that no assertion in the plan checks. */
+  coverageGaps: CoverageGap[];
 
   /** Why anything that did not pass did not pass, and what to do. */
   failures: FailureFinding[];
@@ -183,7 +213,8 @@ function overallVerdict(
  */
 function summarizeCriteria(
   criteria: readonly AcceptanceCriterion[],
-  scenarios: ScenarioResult[]
+  scenarios: ScenarioResult[],
+  coverageGaps: readonly CoverageGap[]
 ): CriterionVerdict[] {
   const assertions = scenarios.flatMap(
     scenario => scenario.assertions
@@ -201,7 +232,10 @@ function summarizeCriteria(
       assertionsPassed: own.filter(
         assertion => assertion.status === 'passed'
       ).length,
-      assertionsTotal: own.length
+      assertionsTotal: own.length,
+      partlyChecked: coverageGaps.some(
+        gap => gap.criterionId === criterion.id
+      )
     };
   });
 }
@@ -235,6 +269,13 @@ export async function runExecutionWorkflow(
   const validated = validateTestPlan(
     plan.generatedPlan,
     plan.acceptanceCriteria.map(criterion => criterion.id)
+  );
+
+  // Worked out from the plan itself, so it is also right for plan files
+  // written before this check existed.
+  const coverageGaps = findCoverageGaps(
+    plan.acceptanceCriteria,
+    validated
   );
 
   const results: ScenarioResult[] = [];
@@ -290,7 +331,13 @@ export async function runExecutionWorkflow(
       )
     },
 
-    criteria: summarizeCriteria(plan.acceptanceCriteria, results),
+    criteria: summarizeCriteria(
+      plan.acceptanceCriteria,
+      results,
+      coverageGaps
+    ),
+
+    coverageGaps,
 
     failures: results.flatMap(analyzeFailures),
 
@@ -386,10 +433,13 @@ export function renderMarkdownReport(
 
   for (const criterion of report.criteria) {
     lines.push(
-      `| ${cell(`${criterion.id} ${criterion.title}`)} | ${criterion.verdict} | ` +
+      `| ${cell(`${criterion.id} ${criterion.title}`)} | ` +
+      `${criterion.verdict}${criterion.partlyChecked ? ' (partly checked)' : ''} | ` +
       `${criterion.assertionsPassed}/${criterion.assertionsTotal} |`
     );
   }
+
+  lines.push(...renderCoverageGaps(report.coverageGaps));
 
   lines.push(...renderFailureDetails(report.failures));
 

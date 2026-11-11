@@ -153,8 +153,8 @@ async function main(): Promise<void> {
     {
       readIssue,
 
-      generatePlan: criteria =>
-        planner.generateTestPlan(criteria),
+      generatePlan: (criteria, request) =>
+        planner.generateTestPlan(criteria, request),
 
       saveReport: report =>
         savePlanningReport(report)
