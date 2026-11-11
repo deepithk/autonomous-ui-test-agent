@@ -128,6 +128,37 @@ When the user selects Add to cart for a product,
 Then the selected product should be added to the shopping cart.
 ```
 
+## Run it from GitHub (RFQA trigger)
+
+The workflow [`.github/workflows/rfqa-agent.yml`](.github/workflows/rfqa-agent.yml) runs the whole agent in GitHub Actions when an issue is moved to "Ready for QA", and comments the result on the issue.
+
+GitHub Actions cannot start from a Projects board column change, so the trigger is the issue label **`status: RFQA`**. That is the same label the agent accepts as proof of the RFQA state when it cannot read the board.
+
+**One-time setup**
+
+```bash
+gh secret set LLM_API_KEY
+gh label create "status: RFQA" --color 0E8A16 --description "Ready for QA: starts the test agent"
+```
+
+`gh secret set` asks you for the key, so it never appears in a command or a file. These are optional:
+
+| Name | Kind | Meaning |
+| --- | --- | --- |
+| `LLM_PROVIDER`, `LLM_MODEL` | variable | Defaults: `gemini` and `gemini-3.5-flash-lite` |
+| `PROJECT_NUMBER` | variable | Project board number (default 1) |
+| `TARGET_BASE_URL`, `SAUCEDEMO_USERNAME` | variable | Defaults: the public SauceDemo site and `standard_user` |
+| `SAUCEDEMO_PASSWORD` | secret | Default: the public demo password |
+| `PROJECT_READ_TOKEN` | secret | A token that can read the Projects board. With it the agent checks the real board status; without it, it relies on the label |
+
+**Use it**
+
+1. Add the label `status: RFQA` to the issue.
+2. The **Actions** tab shows a run named "RFQA Test Agent". After a minute or two the issue gets a comment with the report, and the run has an evidence artifact (screenshots, log and reports, kept 30 days).
+3. Or start a run by hand: `gh workflow run rfqa-agent.yml -f issue_number=1`.
+
+The run is red if any criterion fails, and the comment is posted either way. Each run makes about 8 LLM requests.
+
 ## How it works
 
 ```

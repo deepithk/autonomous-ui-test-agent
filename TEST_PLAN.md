@@ -42,6 +42,8 @@ changes, the next plan changes with it.
 - Reading GitHub issues.
 - Validating the GitHub Projects V2 RFQA status.
 - Extracting acceptance criteria.
+- Starting a run from GitHub when an issue is labelled `status: RFQA`
+  (section 6.8).
 - Generating structured test scenarios with an LLM, from the issue on
   GitHub or from a local copy of the issue (`--issue-file`).
 - Validating the generated plan before any browser is opened.
@@ -197,6 +199,32 @@ that something passed.
 - Writes a JSON report and a Markdown report.
 - Records the model that wrote the plan and the model that executed it.
 - Redacts credentials from everything it writes.
+
+### 6.8 GitHub Trigger (optional)
+
+The workflow `.github/workflows/rfqa-agent.yml` starts the agent without
+anyone running a command. When the label `status: RFQA` is added to an issue,
+or a run is started by hand for one issue, it installs the project, plans the
+tests from that issue, runs them in a headless browser, uploads the evidence
+as a run artifact, and comments the report on the issue.
+
+- **Why a label.** GitHub Actions has no trigger for a card moving between
+  columns of a user-owned Projects board. The label is the trigger instead,
+  and it is the same label the issue reader accepts as proof of the RFQA state
+  when it cannot read the board. If a token that can read the board is added
+  as the `PROJECT_READ_TOKEN` secret, the real board status is checked as
+  well, and a label on an issue that is not in RFQA on the board is refused.
+- **Only the right issue.** A run for an issue that is neither on the board
+  in RFQA nor labelled `status: RFQA` stops with a clear message.
+- **Secrets.** The API key is a repository secret. It is given only to the
+  three steps that use it (the key check, planning and running), not to the
+  job as a whole, so installing packages and running other actions never see
+  it. Issue text is treated as untrusted data by the planner, and the
+  workflow never places it in a shell command.
+- **Results are always reported.** The evidence upload and the comment run
+  even when the tests failed, and a failing criterion makes the run fail.
+- **One run per issue at a time**, so the same issue is not tested twice at
+  once.
 
 ## 7. Dynamic UI Element Identification
 
@@ -541,9 +569,11 @@ The solution supports:
 It uses platform-independent Node.js APIs and runs on Node 20 and newer.
 The build and unit tests were checked on Node 20, 22 and 24, and the browser
 layer was checked on Node 20 and 22. The GitHub Actions workflow builds the
-project and runs the unit tests on Windows x64 (Node 26 and Node 22), macOS
-Intel x64 and macOS Apple Silicon ARM64 (both Node 26). Browser runs are not
-part of CI because they need an LLM key and the live site.
+project and runs the unit tests on Windows x64 (Node 26 and Node 22), Linux
+x64 (Node 24), macOS Intel x64 and macOS Apple Silicon ARM64 (both Node 26).
+Linux is included because the RFQA workflow (section 6.8) runs the agent
+there. Browser runs are not part of the regular CI because they need an LLM
+key and the live site; they are what the RFQA workflow does.
 
 ## 14. Known Limitations and Future Work
 

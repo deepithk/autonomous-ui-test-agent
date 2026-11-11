@@ -32,6 +32,11 @@ jobs:
             os_label: Windows-x64
             node_version: '22.x'
 
+          # The RFQA workflow runs the agent on Linux, so check Linux too.
+          - os: ubuntu-latest
+            os_label: Linux-x64
+            node_version: '24.x'
+
           - os: macos-26-intel
             os_label: macOS-Intel-x64
             node_version: '26.x'

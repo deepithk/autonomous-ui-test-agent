@@ -1,0 +1,138 @@
+name: RFQA Test Agent
+
+# Runs the autonomous UI test agent when an issue is moved to "Ready for QA".
+#
+# GitHub Actions cannot start from a Projects board column change, so the
+# trigger is the issue label "status: RFQA". That is the same label the agent
+# accepts as proof of the RFQA state when it cannot read the board. A run can
+# also be started by hand for one issue.
+#
+# What it does: reads the issue, plans the tests, runs them in a browser,
+# uploads the evidence, and comments the result on the issue.
+#
+# One-time setup is described in the README, section "Run it from GitHub".
+
+on:
+  issues:
+    types: [labeled]
+
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: The issue to test
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  issues: write
+
+# Testing the same issue twice at once only wastes LLM requests.
+concurrency:
+  group: rfqa-agent-${{ github.event.issue.number || inputs.issue_number }}
+  cancel-in-progress: false
+
+jobs:
+  test-agent:
+    name: Plan and run the tests for the issue
+    if: "github.event_name == 'workflow_dispatch' || github.event.label.name == 'status: RFQA'"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # Settings that are not secret. Secrets are given only to the steps that
+    # use them (below), so that installing packages or running other actions
+    # never has access to them.
+    env:
+      ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+
+      LLM_PROVIDER: ${{ vars.LLM_PROVIDER || 'gemini' }}
+      LLM_MODEL: ${{ vars.LLM_MODEL || 'gemini-3.5-flash-lite' }}
+
+      GITHUB_OWNER: ${{ github.repository_owner }}
+      GITHUB_REPO: ${{ github.event.repository.name }}
+      GITHUB_ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+      GITHUB_PROJECT_NUMBER: ${{ vars.PROJECT_NUMBER || '1' }}
+      GITHUB_RFQA_STATUS_VALUE: RFQA
+      GITHUB_RFQA_FALLBACK_LABEL: 'true'
+
+      # The application under test and its public demo login name.
+      TARGET_BASE_URL: ${{ vars.TARGET_BASE_URL || 'https://www.saucedemo.com' }}
+      SAUCEDEMO_USERNAME: ${{ vars.SAUCEDEMO_USERNAME || 'standard_user' }}
+
+      PLAYWRIGHT_MCP_HEADLESS: 'true'
+
+    steps:
+      - name: Check that the API key is set
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        run: |
+          if [ -z "$LLM_API_KEY" ]; then
+            echo "::error::The LLM_API_KEY secret is not set. Add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24.x'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+
+      # The built-in token can read issues. To also check the Projects board,
+      # add a token that can read it as PROJECT_READ_TOKEN; without it the
+      # agent falls back to the "status: RFQA" label.
+      - name: Plan the tests from the issue
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.PROJECT_READ_TOKEN || secrets.GITHUB_TOKEN }}
+          SAUCEDEMO_PASSWORD: ${{ secrets.SAUCEDEMO_PASSWORD || 'secret_sauce' }}
+        run: npm run plan:issue
+
+      - name: Run the tests
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          SAUCEDEMO_PASSWORD: ${{ secrets.SAUCEDEMO_PASSWORD || 'secret_sauce' }}
+        run: npm run execute:plan -- --label "issue-${ISSUE_NUMBER}"
+
+      # The steps below run even when the tests failed, so that a failing
+      # run still leaves its evidence and its explanation behind.
+      - name: Upload the evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: evidence-issue-${{ env.ISSUE_NUMBER }}
+          path: evidence/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Publish the result
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          REPORT="$(ls -t evidence/reports/test-execution-*.md 2>/dev/null | head -n 1 || true)"
+
+          {
+            echo "### Autonomous test agent"
+            echo
+            echo "Workflow run, with the screenshots and the log in the evidence artifact: ${RUN_URL}"
+            echo
+            if [ -n "$REPORT" ]; then
+              head -c 60000 "$REPORT"
+            else
+              echo "No report was produced. The run stopped before the tests finished; see the workflow run for the reason."
+            fi
+          } > comment.md
+
+          cat comment.md >> "$GITHUB_STEP_SUMMARY"
+
+          gh issue comment "$ISSUE_NUMBER" --body-file comment.md
