@@ -8,7 +8,7 @@ import {
 } from 'node:fs/promises';
 import path from 'node:path';
 
-import { loadConfig } from '../config/env.js';
+import { loadLocalConfig } from '../config/env.js';
 
 import { ensureEvidenceDirectories } from '../config/platform.js';
 
@@ -76,7 +76,8 @@ async function main(): Promise<void> {
   console.info(' AUTONOMOUS UI TEST EXECUTION');
   console.info('========================================\n');
 
-  const config = loadConfig();
+  // Executing a saved plan needs no GitHub settings.
+  const config = loadLocalConfig();
 
   const evidence = await ensureEvidenceDirectories();
 

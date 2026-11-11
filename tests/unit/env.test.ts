@@ -9,6 +9,7 @@ import {
   ALLOWED_PLAYWRIGHT_MCP_TOOLS,
   BLOCKED_PLAYWRIGHT_MCP_TOOLS,
   loadConfig,
+  loadLocalConfig,
   redactConfigForLogging
 } from '../../src/config/env.js';
 
@@ -44,6 +45,52 @@ describe('Phase 2 Environment and Cross-Platform Utilities', () => {
     expect(config.PLAYWRIGHT_MCP_CAPS).toBe('testing');
     expect(config.MAX_STEPS_PER_SCENARIO).toBe(15);
     expect(config.GITHUB_PROJECT_NUMBER).toBe(1);
+  });
+
+  it('loads the local configuration without any GitHub settings', () => {
+    const { LLM_PROVIDER, LLM_MODEL, LLM_API_KEY, TARGET_BASE_URL,
+      SAUCEDEMO_USERNAME, SAUCEDEMO_PASSWORD } = validEnv;
+
+    const config = loadLocalConfig({
+      LLM_PROVIDER,
+      LLM_MODEL,
+      LLM_API_KEY,
+      TARGET_BASE_URL,
+      SAUCEDEMO_USERNAME,
+      SAUCEDEMO_PASSWORD
+    });
+
+    expect(config.LLM_MODEL).toBe('test-model');
+    expect(config.MAX_STEPS_PER_SCENARIO).toBe(15);
+    expect('GITHUB_TOKEN' in config).toBe(false);
+  });
+
+  it('still requires the target app and login for the local configuration', () => {
+    expect(() => loadLocalConfig({ LLM_PROVIDER: 'gemini' })).toThrow(
+      /TARGET_BASE_URL[\s\S]*SAUCEDEMO_USERNAME/
+    );
+  });
+
+  it('keeps GitHub settings required for the full configuration', () => {
+    const { GITHUB_TOKEN: _removed, ...withoutToken } = validEnv;
+
+    expect(() => loadConfig(withoutToken)).toThrow(/GITHUB_TOKEN/);
+  });
+
+  it('redacts secrets from the local configuration too', () => {
+    const config = loadLocalConfig({
+      LLM_PROVIDER: 'gemini',
+      LLM_API_KEY: 'key-value',
+      TARGET_BASE_URL: 'https://example.com',
+      SAUCEDEMO_USERNAME: 'user',
+      SAUCEDEMO_PASSWORD: 'password-value'
+    });
+
+    const safe = JSON.stringify(redactConfigForLogging(config));
+
+    expect(safe).not.toContain('key-value');
+    expect(safe).not.toContain('password-value');
+    expect(safe).not.toContain('GITHUB_TOKEN');
   });
 
   it('rejects missing required environment variables', () => {

@@ -141,12 +141,31 @@ const envSchema = z.object({
 export type AppConfig = z.infer<typeof envSchema>;
 
 /**
- * Validate environment configuration.
+ * The settings that only reading an issue from GitHub needs.
  */
-export function loadConfig(
-  rawEnv: NodeJS.ProcessEnv = process.env
-): AppConfig {
-  const result = envSchema.safeParse(rawEnv);
+const GITHUB_SETTINGS = {
+  GITHUB_TOKEN: true,
+  GITHUB_OWNER: true,
+  GITHUB_REPO: true,
+  GITHUB_ISSUE_NUMBER: true,
+  GITHUB_PROJECT_NUMBER: true,
+  GITHUB_RFQA_STATUS_VALUE: true,
+  GITHUB_RFQA_FALLBACK_LABEL: true
+} as const;
+
+/**
+ * Everything except the GitHub settings. Executing a saved plan, and
+ * planning from a local issue file, need no GitHub access.
+ */
+const localEnvSchema = envSchema.omit(GITHUB_SETTINGS);
+
+export type LocalAppConfig = z.infer<typeof localEnvSchema>;
+
+function parseEnvironment<Schema extends z.ZodType>(
+  schema: Schema,
+  rawEnv: NodeJS.ProcessEnv
+): z.infer<Schema> {
+  const result = schema.safeParse(rawEnv);
 
   if (!result.success) {
     const issues = result.error.issues
@@ -162,15 +181,40 @@ export function loadConfig(
 }
 
 /**
+ * Validate the full environment configuration, including the
+ * GitHub settings needed to read an issue from GitHub.
+ */
+export function loadConfig(
+  rawEnv: NodeJS.ProcessEnv = process.env
+): AppConfig {
+  return parseEnvironment(envSchema, rawEnv);
+}
+
+/**
+ * Validate the configuration for running without GitHub: executing
+ * a saved plan, or planning from a local issue file.
+ */
+export function loadLocalConfig(
+  rawEnv: NodeJS.ProcessEnv = process.env
+): LocalAppConfig {
+  return parseEnvironment(localEnvSchema, rawEnv);
+}
+
+/**
  * Redact sensitive configuration before logging.
  */
 export function redactConfigForLogging(
-  config: AppConfig
+  config: AppConfig | LocalAppConfig
 ): Record<string, unknown> {
-  return {
+  const safe: Record<string, unknown> = {
     ...config,
     LLM_API_KEY: '[REDACTED]',
-    GITHUB_TOKEN: '[REDACTED]',
     SAUCEDEMO_PASSWORD: '[REDACTED]'
   };
+
+  if ('GITHUB_TOKEN' in config) {
+    safe.GITHUB_TOKEN = '[REDACTED]';
+  }
+
+  return safe;
 }

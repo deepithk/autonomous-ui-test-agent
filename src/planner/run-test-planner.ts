@@ -1,10 +1,25 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { loadConfig } from '../config/env.js';
+import { loadConfig, loadLocalConfig } from '../config/env.js';
+
+import type { AppConfig, LocalAppConfig } from '../config/env.js';
 
 import { GitHubClient } from '../github/github-client.js';
 import { IssueReader } from '../github/issue-reader.js';
+import { readLocalIssue } from '../github/local-issue.js';
+
+/** The board status an issue must have, when no GitHub setting says otherwise. */
+const DEFAULT_RFQA_STATUS = 'RFQA';
+
+/**
+ * Reads --issue-file <path> from the command line, if given.
+ */
+function readIssueFileArgument(argv: string[]): string | undefined {
+  const index = argv.indexOf('--issue-file');
+
+  return index === -1 ? undefined : argv[index + 1];
+}
 
 import { createLLMProvider } from './providers/provider-factory.js';
 import { TestPlanner } from './test-planner.js';
@@ -64,22 +79,51 @@ async function main(): Promise<void> {
   console.info(' AUTONOMOUS UI TEST PLAN GENERATION');
   console.info('========================================\n');
 
-  // 1. Load configuration.
-  const config = loadConfig();
+  // 1. Load configuration. With --issue-file no GitHub settings
+  //    are needed, so only the local settings are validated.
+  const issueFile = readIssueFileArgument(process.argv.slice(2));
 
-  // 2. Initialize GitHub client and Issue Reader.
-  const githubClient = new GitHubClient(
-    config.GITHUB_TOKEN
-  );
+  const github: AppConfig | undefined = issueFile
+    ? undefined
+    : loadConfig();
 
-  const issueReader = new IssueReader(githubClient, {
-    owner: config.GITHUB_OWNER,
-    repository: config.GITHUB_REPO,
-    issueNumber: config.GITHUB_ISSUE_NUMBER,
-    projectNumber: config.GITHUB_PROJECT_NUMBER,
-    expectedStatus: config.GITHUB_RFQA_STATUS_VALUE,
-    allowLabelFallback: config.GITHUB_RFQA_FALLBACK_LABEL
-  });
+  // Both kinds of configuration have every non-GitHub setting.
+  const config: LocalAppConfig = github ?? loadLocalConfig();
+
+  // 2. Choose where the issue comes from.
+  let readIssue: () => ReturnType<IssueReader['readIssue']>;
+
+  let repository: string;
+  let expectedStatus: string;
+
+  if (github) {
+    const githubClient = new GitHubClient(github.GITHUB_TOKEN);
+
+    const issueReader = new IssueReader(githubClient, {
+      owner: github.GITHUB_OWNER,
+      repository: github.GITHUB_REPO,
+      issueNumber: github.GITHUB_ISSUE_NUMBER,
+      projectNumber: github.GITHUB_PROJECT_NUMBER,
+      expectedStatus: github.GITHUB_RFQA_STATUS_VALUE,
+      allowLabelFallback: github.GITHUB_RFQA_FALLBACK_LABEL
+    });
+
+    readIssue = () => issueReader.readIssue();
+
+    repository = `${github.GITHUB_OWNER}/${github.GITHUB_REPO}`;
+    expectedStatus = github.GITHUB_RFQA_STATUS_VALUE;
+  } else {
+    const file = issueFile as string;
+
+    expectedStatus = DEFAULT_RFQA_STATUS;
+
+    readIssue = () =>
+      readLocalIssue(file, { status: DEFAULT_RFQA_STATUS });
+
+    repository = `local file ${file}`;
+
+    console.info(`[INFO] Issue source: local file ${file}`);
+  }
 
   // 3. Initialize the selected LLM provider.
   const provider = createLLMProvider(config);
@@ -102,17 +146,16 @@ async function main(): Promise<void> {
 
   const result = await runPlanningWorkflow(
     {
-      repository:
-        `${config.GITHUB_OWNER}/${config.GITHUB_REPO}`,
+      repository,
 
       provider: provider.providerName,
 
       model: config.LLM_MODEL,
 
-      expectedStatus: config.GITHUB_RFQA_STATUS_VALUE
+      expectedStatus
     },
     {
-      readIssue: () => issueReader.readIssue(),
+      readIssue,
 
       generatePlan: criteria =>
         planner.generateTestPlan(criteria),

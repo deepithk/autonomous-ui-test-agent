@@ -20,7 +20,7 @@ export interface IssueReaderConfig {
 export interface ProjectStatusResult {
   projectTitle: string | null;
   status: string;
-  source: 'project-v2' | 'issue-label-fallback';
+  source: 'project-v2' | 'issue-label-fallback' | 'local-file';
   warning?: string;
 }
 
