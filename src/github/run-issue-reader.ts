@@ -1,6 +1,6 @@
 import { loadConfig } from '../config/env.js';
-import { GitHubClient } from './github-client.js';
-import { IssueReader } from './issue-reader.js';
+import { runCli } from '../util/cli.js';
+import { createIssueReader } from './issue-reader.js';
 
 /**
  * Runs the GitHub Issue Reader against the configured
@@ -13,16 +13,7 @@ async function main(): Promise<void> {
 
   const config = loadConfig();
 
-  const client = new GitHubClient(config.GITHUB_TOKEN);
-
-  const reader = new IssueReader(client, {
-    owner: config.GITHUB_OWNER,
-    repository: config.GITHUB_REPO,
-    issueNumber: config.GITHUB_ISSUE_NUMBER,
-    projectNumber: config.GITHUB_PROJECT_NUMBER,
-    expectedStatus: config.GITHUB_RFQA_STATUS_VALUE,
-    allowLabelFallback: config.GITHUB_RFQA_FALLBACK_LABEL
-  });
+  const reader = createIssueReader(config);
 
   console.info(
     `[INFO] Retrieving issue #${config.GITHUB_ISSUE_NUMBER}...`
@@ -67,14 +58,4 @@ async function main(): Promise<void> {
   );
 }
 
-main().catch((error: unknown) => {
-  const message =
-    error instanceof Error
-      ? error.message
-      : 'Unknown GitHub Issue Reader error';
-
-  console.error('\n[ERROR] GitHub Issue Reader failed.');
-  console.error(message);
-
-  process.exitCode = 1;
-});
+runCli('GitHub Issue Reader failed.', main);

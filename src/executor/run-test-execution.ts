@@ -10,6 +10,8 @@ import path from 'node:path';
 
 import { loadLocalConfig } from '../config/env.js';
 
+import { runCli } from '../util/cli.js';
+
 import { ensureEvidenceDirectories } from '../config/platform.js';
 
 import { createLLMProvider } from '../planner/providers/provider-factory.js';
@@ -276,14 +278,4 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error: unknown) => {
-  const message =
-    error instanceof Error
-      ? error.message
-      : 'Unknown execution error';
-
-  console.error('\n[ERROR] Test execution failed.');
-  console.error(message);
-
-  process.exitCode = 1;
-});
+runCli('Test execution failed.', main);

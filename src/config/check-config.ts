@@ -4,6 +4,8 @@ import {
   redactConfigForLogging
 } from './env.js';
 
+import { runCli } from '../util/cli.js';
+
 import {
   ensureEvidenceDirectories,
   isMainModule
@@ -60,14 +62,7 @@ export async function checkConfig(
 
 // Run only when this file is the entry point.
 if (isMainModule(import.meta.url, process.argv[1])) {
-  checkConfig({ includeGitHub: process.argv.includes('--github') }).catch(
-    (error: unknown) => {
-      const message =
-        error instanceof Error ? error.message : String(error);
-
-      console.error(`[ERROR] Configuration check failed:\n${message}`);
-
-      process.exitCode = 1;
-    }
+  runCli('Configuration check failed.', () =>
+    checkConfig({ includeGitHub: process.argv.includes('--github') })
   );
 }

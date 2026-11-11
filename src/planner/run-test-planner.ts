@@ -5,8 +5,10 @@ import { loadConfig, loadLocalConfig } from '../config/env.js';
 
 import type { AppConfig, LocalAppConfig } from '../config/env.js';
 
-import { GitHubClient } from '../github/github-client.js';
-import { IssueReader } from '../github/issue-reader.js';
+import { runCli } from '../util/cli.js';
+
+import { createIssueReader } from '../github/issue-reader.js';
+import type { IssueReader } from '../github/issue-reader.js';
 import { readLocalIssue } from '../github/local-issue.js';
 
 /** The board status an issue must have, when no GitHub setting says otherwise. */
@@ -98,16 +100,7 @@ async function main(): Promise<void> {
   let expectedStatus: string;
 
   if (github) {
-    const githubClient = new GitHubClient(github.GITHUB_TOKEN);
-
-    const issueReader = new IssueReader(githubClient, {
-      owner: github.GITHUB_OWNER,
-      repository: github.GITHUB_REPO,
-      issueNumber: github.GITHUB_ISSUE_NUMBER,
-      projectNumber: github.GITHUB_PROJECT_NUMBER,
-      expectedStatus: github.GITHUB_RFQA_STATUS_VALUE,
-      allowLabelFallback: github.GITHUB_RFQA_FALLBACK_LABEL
-    });
+    const issueReader = createIssueReader(github);
 
     readIssue = () => issueReader.readIssue();
 
@@ -228,14 +221,4 @@ async function main(): Promise<void> {
   console.info('========================================\n');
 }
 
-main().catch((error: unknown) => {
-  const message =
-    error instanceof Error
-      ? error.message
-      : 'Unknown planning workflow error';
-
-  console.error('\n[ERROR] Test plan generation failed.');
-  console.error(message);
-
-  process.exitCode = 1;
-});
+runCli('Test plan generation failed.', main);

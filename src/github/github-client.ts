@@ -8,6 +8,8 @@
  * Uses Node.js native fetch to avoid additional dependencies.
  */
 
+import { errorMessage } from '../util/text.js';
+
 export interface GitHubIssueLabel {
   name: string;
 }
@@ -73,33 +75,46 @@ export class GitHubClient {
    * Makes an authenticated REST API request.
    */
   private async get<T>(endpoint: string): Promise<T> {
-    const url = `${this.apiBaseUrl}${endpoint}`;
+    const response = await this.send(
+      'REST',
+      `${this.apiBaseUrl}${endpoint}`,
+      { method: 'GET', headers: this.getHeaders() }
+    );
 
+    return (await response.json()) as T;
+  }
+
+  /**
+   * Sends a request with the common timeout and turns a network
+   * problem or an HTTP error into a GitHubApiError.
+   */
+  private async send(
+    kind: 'REST' | 'GraphQL',
+    url: string,
+    init: RequestInit
+  ): Promise<Response> {
     let response: Response;
 
     try {
       response = await fetch(url, {
-        method: 'GET',
-        headers: this.getHeaders(),
+        ...init,
         signal: AbortSignal.timeout(this.requestTimeoutMs)
       });
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : 'Unknown network error';
-
       throw new GitHubApiError(
-        `GitHub REST request failed: ${message}`
+        `GitHub ${kind} request failed: ` +
+        errorMessage(error, 'Unknown network error')
       );
     }
 
     if (!response.ok) {
       throw new GitHubApiError(
-        `GitHub REST request failed with HTTP ${response.status}.`,
+        `GitHub ${kind} request failed with HTTP ${response.status}.`,
         response.status
       );
     }
 
-    return (await response.json()) as T;
+    return response;
   }
 
   /**
@@ -139,33 +154,15 @@ export class GitHubClient {
       throw new Error('GraphQL query cannot be empty.');
     }
 
-    let response: Response;
-
-    try {
-      response = await fetch(`${this.apiBaseUrl}/graphql`, {
+    const response = await this.send(
+      'GraphQL',
+      `${this.apiBaseUrl}/graphql`,
+      {
         method: 'POST',
         headers: this.getHeaders(),
-        body: JSON.stringify({
-          query,
-          variables
-        }),
-        signal: AbortSignal.timeout(this.requestTimeoutMs)
-      });
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : 'Unknown network error';
-
-      throw new GitHubApiError(
-        `GitHub GraphQL request failed: ${message}`
-      );
-    }
-
-    if (!response.ok) {
-      throw new GitHubApiError(
-        `GitHub GraphQL request failed with HTTP ${response.status}.`,
-        response.status
-      );
-    }
+        body: JSON.stringify({ query, variables })
+      }
+    );
 
     const result =
       (await response.json()) as GraphQLResponse<T>;

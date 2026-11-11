@@ -6,6 +6,12 @@ import type {
   LLMGenerationResult
 } from './llm-provider.js';
 
+import {
+  validateGenerationRequest,
+  validateProviderSettings,
+  wrapProviderError
+} from './provider-support.js';
+
 /**
  * Anthropic provider errors.
  *
@@ -17,6 +23,9 @@ export class AnthropicProviderError extends Error {
     this.name = 'AnthropicProviderError';
   }
 }
+
+const fail = (message: string): Error =>
+  new AnthropicProviderError(message);
 
 /**
  * Anthropic Claude implementation of the common LLM interface.
@@ -43,26 +52,14 @@ export class AnthropicProvider implements ILLMProvider {
     timeoutMs = 120000,
     client?: Anthropic
   ) {
-    if (!apiKey.trim()) {
-      throw new AnthropicProviderError(
-        'Anthropic API key is required.'
-      );
-    }
+    const settings = validateProviderSettings(
+      'Anthropic',
+      { apiKey, model, timeoutMs },
+      fail
+    );
 
-    if (!model.trim()) {
-      throw new AnthropicProviderError(
-        'Anthropic model name is required.'
-      );
-    }
-
-    if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) {
-      throw new AnthropicProviderError(
-        'Anthropic request timeout must be a positive integer.'
-      );
-    }
-
-    this.apiKey = apiKey.trim();
-    this.model = model.trim();
+    this.apiKey = settings.apiKey;
+    this.model = settings.model;
     this.timeoutMs = timeoutMs;
 
     // Optional client injection allows isolated unit testing.
@@ -80,35 +77,7 @@ export class AnthropicProvider implements ILLMProvider {
     request: LLMGenerationRequest
   ): Promise<LLMGenerationResult> {
 
-    if (!request.systemInstruction.trim()) {
-      throw new AnthropicProviderError(
-        'System instruction cannot be empty.'
-      );
-    }
-
-    if (!request.prompt.trim()) {
-      throw new AnthropicProviderError(
-        'LLM prompt cannot be empty.'
-      );
-    }
-
-    if (
-      !Number.isInteger(request.maxOutputTokens) ||
-      request.maxOutputTokens <= 0
-    ) {
-      throw new AnthropicProviderError(
-        'Maximum output tokens must be a positive integer.'
-      );
-    }
-
-    if (
-      !request.responseSchema ||
-      Object.keys(request.responseSchema).length === 0
-    ) {
-      throw new AnthropicProviderError(
-        'A valid JSON response schema is required.'
-      );
-    }
+    validateGenerationRequest(request, fail);
 
     try {
       const response = await this.client.messages.create({
@@ -171,20 +140,8 @@ export class AnthropicProvider implements ILLMProvider {
         throw error;
       }
 
-      const originalMessage =
-        error instanceof Error
-          ? error.message
-          : 'Unknown Anthropic API error';
-
-      // Prevent accidental credential disclosure.
-      const safeMessage = originalMessage.replaceAll(
-        this.apiKey,
-        '[REDACTED]'
-      );
-
-      throw new AnthropicProviderError(
-        `Anthropic generation failed: ${safeMessage}`
-      );
+      // The key is removed from the message before it is rethrown.
+      throw wrapProviderError('Anthropic', error, this.apiKey, fail);
     }
   }
 }

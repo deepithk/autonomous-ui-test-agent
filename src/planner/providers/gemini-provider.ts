@@ -5,6 +5,12 @@ import {
 
 import type { ILLMProvider } from './llm-provider.js';
 
+import {
+  validateGenerationRequest,
+  validateProviderSettings,
+  wrapProviderError
+} from './provider-support.js';
+
 import type {
   LLMGenerationRequest,
   LLMGenerationResult
@@ -21,6 +27,8 @@ export class GeminiProviderError extends Error {
     this.name = 'GeminiProviderError';
   }
 }
+
+const fail = (message: string): Error => new GeminiProviderError(message);
 
 /**
  * Google Gemini implementation of the common LLM interface.
@@ -47,26 +55,14 @@ export class GeminiProvider implements ILLMProvider {
     timeoutMs = 120000,
     client?: GoogleGenAI
   ) {
-    if (!apiKey.trim()) {
-      throw new GeminiProviderError(
-        'Gemini API key is required.'
-      );
-    }
+    const settings = validateProviderSettings(
+      'Gemini',
+      { apiKey, model, timeoutMs },
+      fail
+    );
 
-    if (!model.trim()) {
-      throw new GeminiProviderError(
-        'Gemini model name is required.'
-      );
-    }
-
-    if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) {
-      throw new GeminiProviderError(
-        'Gemini request timeout must be a positive integer.'
-      );
-    }
-
-    this.apiKey = apiKey.trim();
-    this.model = model.trim();
+    this.apiKey = settings.apiKey;
+    this.model = settings.model;
     this.timeoutMs = timeoutMs;
 
     // Optional client injection allows isolated unit testing.
@@ -82,35 +78,7 @@ export class GeminiProvider implements ILLMProvider {
     request: LLMGenerationRequest
   ): Promise<LLMGenerationResult> {
 
-    if (!request.systemInstruction.trim()) {
-      throw new GeminiProviderError(
-        'System instruction cannot be empty.'
-      );
-    }
-
-    if (!request.prompt.trim()) {
-      throw new GeminiProviderError(
-        'LLM prompt cannot be empty.'
-      );
-    }
-
-    if (
-      !Number.isInteger(request.maxOutputTokens) ||
-      request.maxOutputTokens <= 0
-    ) {
-      throw new GeminiProviderError(
-        'Maximum output tokens must be a positive integer.'
-      );
-    }
-
-    if (
-      !request.responseSchema ||
-      Object.keys(request.responseSchema).length === 0
-    ) {
-      throw new GeminiProviderError(
-        'A valid JSON response schema is required.'
-      );
-    }
+    validateGenerationRequest(request, fail);
 
     // Gemini 3 models use thinking levels rather than
     // temperature sampling for reasoning control.
@@ -181,20 +149,8 @@ export class GeminiProvider implements ILLMProvider {
         throw error;
       }
 
-      const originalMessage =
-        error instanceof Error
-          ? error.message
-          : 'Unknown Gemini API error';
-
-      // Prevent accidental credential disclosure.
-      const safeMessage = originalMessage.replaceAll(
-        this.apiKey,
-        '[REDACTED]'
-      );
-
-      throw new GeminiProviderError(
-        `Gemini generation failed: ${safeMessage}`
-      );
+      // The key is removed from the message before it is rethrown.
+      throw wrapProviderError('Gemini', error, this.apiKey, fail);
     }
   }
 }

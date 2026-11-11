@@ -8,6 +8,8 @@ import type {
   ILLMProvider
 } from './providers/llm-provider.js';
 
+import { errorMessage } from '../util/text.js';
+
 import {
   GeneratedTestPlanSchema,
   validateTestPlan
@@ -379,13 +381,9 @@ export class TestPlanner {
         temperature: this.temperature
       });
     } catch (error: unknown) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Unknown provider error';
-
       throw new TestPlannerError(
-        `Test plan generation failed: ${message}`
+        'Test plan generation failed: ' +
+        errorMessage(error, 'Unknown provider error')
       );
     }
 
@@ -428,13 +426,9 @@ export class TestPlanner {
         sourceCriterionIds
       );
     } catch (error: unknown) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Unknown validation error';
-
       throw new TestPlannerError(
-        `Generated test plan validation failed: ${message}`
+        'Generated test plan validation failed: ' +
+        errorMessage(error, 'Unknown validation error')
       );
     }
 

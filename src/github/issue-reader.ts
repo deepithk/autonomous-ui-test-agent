@@ -1,3 +1,7 @@
+import type { AppConfig } from '../config/env.js';
+
+import { errorMessage } from '../util/text.js';
+
 import {
   GitHubClient,
   type GitHubIssue
@@ -114,6 +118,20 @@ export class IssueReaderError extends Error {
   }
 }
 
+/**
+ * Builds the reader for the issue named in the GitHub settings.
+ */
+export function createIssueReader(config: AppConfig): IssueReader {
+  return new IssueReader(new GitHubClient(config.GITHUB_TOKEN), {
+    owner: config.GITHUB_OWNER,
+    repository: config.GITHUB_REPO,
+    issueNumber: config.GITHUB_ISSUE_NUMBER,
+    projectNumber: config.GITHUB_PROJECT_NUMBER,
+    expectedStatus: config.GITHUB_RFQA_STATUS_VALUE,
+    allowLabelFallback: config.GITHUB_RFQA_FALLBACK_LABEL
+  });
+}
+
 export class IssueReader {
   constructor(
     private readonly client: GitHubClient,
@@ -164,10 +182,7 @@ export class IssueReader {
       project = await this.readProjectStatus();
 
     } catch (error: unknown) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Unknown Projects V2 error';
+      const message = errorMessage(error, 'Unknown Projects V2 error');
 
       // Label fallback is permitted only when configured
       // and the actual issue contains the expected label.
