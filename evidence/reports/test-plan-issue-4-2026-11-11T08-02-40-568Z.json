@@ -1,0 +1,528 @@
+{
+  "generatedAt": "2026-11-11T08:02:40.568Z",
+  "source": {
+    "repository": "deepithk/autonomous-ui-test-agent",
+    "issueNumber": 4,
+    "issueTitle": "Feature: Sort products on the inventory page",
+    "issueUrl": "https://github.com/deepithk/autonomous-ui-test-agent/issues/4",
+    "projectTitle": null,
+    "projectStatus": "RFQA",
+    "projectStatusSource": "issue-label-fallback",
+    "projectStatusWarning": "Projects V2 could not be verified. Status was obtained from the issue label. Reason: GitHub GraphQL query failed: Could not resolve to a ProjectV2 with the number 1."
+  },
+  "llm": {
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite"
+  },
+  "acceptanceCriteria": [
+    {
+      "id": "AC-01",
+      "title": "Successful Login",
+      "description": "Given the user is on the login page,\n\nWhen valid credentials are entered,\n\nThen the products inventory page should be displayed."
+    },
+    {
+      "id": "AC-02",
+      "title": "Default Sort Order",
+      "description": "Given the user is on the products inventory page,\n\nThen the sort selector should show \"Name (A to Z)\" and the first product listed should be \"Sauce Labs Backpack\"."
+    },
+    {
+      "id": "AC-03",
+      "title": "Sort by Price, Low to High",
+      "description": "Given the user is on the products inventory page,\n\nWhen the user selects \"Price (low to high)\",\n\nThen the first product listed should be \"Sauce Labs Onesie\"."
+    },
+    {
+      "id": "AC-04",
+      "title": "Sort by Name, Z to A",
+      "description": "Given the user is on the products inventory page,\n\nWhen the user selects \"Name (Z to A)\",\n\nThen the first product listed should be \"Test.allTheThings() T-Shirt (Red)\"."
+    }
+  ],
+  "generatedPlan": {
+    "planTitle": "Sort products on the inventory page test plan",
+    "summary": "Functional test plan for verifying sorting functionality on the SauceDemo products inventory page.",
+    "scenarios": [
+      {
+        "scenarioId": "SC-001",
+        "title": "Successful Login",
+        "objective": "Verify successful login redirects to the products inventory page.",
+        "acceptanceCriterionIds": [
+          "AC-01"
+        ],
+        "preconditions": [
+          "The user is on the login page using a fresh browser context."
+        ],
+        "steps": [
+          {
+            "stepId": "STEP-01",
+            "action": "navigate",
+            "instruction": "Navigate to the SauceDemo login page.",
+            "target": {
+              "description": "Browser window",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "value": "https://www.saucedemo.com/",
+            "expectedObservation": "The login page is displayed.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-02",
+            "action": "fill",
+            "instruction": "Enter the username.",
+            "target": {
+              "description": "Username input field",
+              "role": null,
+              "accessibleName": "Username",
+              "visibleText": null,
+              "label": "Username"
+            },
+            "value": "{{SAUCEDEMO_USERNAME}}",
+            "expectedObservation": "Username is entered.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-03",
+            "action": "fill",
+            "instruction": "Enter the password.",
+            "target": {
+              "description": "Password input field",
+              "role": null,
+              "accessibleName": "Password",
+              "visibleText": null,
+              "label": "Password"
+            },
+            "value": "{{SAUCEDEMO_PASSWORD}}",
+            "expectedObservation": "Password is entered.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-04",
+            "action": "click",
+            "instruction": "Click the login button.",
+            "target": {
+              "description": "Login button",
+              "role": "button",
+              "accessibleName": "Login",
+              "visibleText": "Login",
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "The products inventory page is displayed.",
+            "capture": null
+          }
+        ],
+        "assertions": [
+          {
+            "assertionId": "ASSERT-01",
+            "acceptanceCriterionId": "AC-01",
+            "afterStepId": "STEP-04",
+            "type": "url",
+            "target": {
+              "description": "Inventory page URL",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "expectedValue": "https://www.saucedemo.com/inventory.html",
+            "explanation": "Verify that successful login navigates to the inventory page."
+          }
+        ],
+        "expectedOutcome": "The user successfully logs in and views the products inventory page."
+      },
+      {
+        "scenarioId": "SC-002",
+        "title": "Default Sort Order",
+        "objective": "Verify the default sort order on the inventory page.",
+        "acceptanceCriterionIds": [
+          "AC-02"
+        ],
+        "preconditions": [
+          "The user is on the login page using a fresh browser context."
+        ],
+        "steps": [
+          {
+            "stepId": "STEP-01",
+            "action": "navigate",
+            "instruction": "Navigate to the SauceDemo login page.",
+            "target": {
+              "description": "Browser window",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "value": "https://www.saucedemo.com/",
+            "expectedObservation": "The login page is displayed.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-02",
+            "action": "fill",
+            "instruction": "Enter the username.",
+            "target": {
+              "description": "Username input field",
+              "role": null,
+              "accessibleName": "Username",
+              "visibleText": null,
+              "label": "Username"
+            },
+            "value": "{{SAUCEDEMO_USERNAME}}",
+            "expectedObservation": "Username is entered.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-03",
+            "action": "fill",
+            "instruction": "Enter the password.",
+            "target": {
+              "description": "Password input field",
+              "role": null,
+              "accessibleName": "Password",
+              "visibleText": null,
+              "label": "Password"
+            },
+            "value": "{{SAUCEDEMO_PASSWORD}}",
+            "expectedObservation": "Password is entered.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-04",
+            "action": "click",
+            "instruction": "Click the login button.",
+            "target": {
+              "description": "Login button",
+              "role": "button",
+              "accessibleName": "Login",
+              "visibleText": "Login",
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "The products inventory page is displayed.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-05",
+            "action": "observe",
+            "instruction": "Observe the sort selector value.",
+            "target": {
+              "description": "Product sort dropdown",
+              "role": "combobox",
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "Sort selector shows Name (A to Z).",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-06",
+            "action": "observe",
+            "instruction": "Observe the first product listed.",
+            "target": {
+              "description": "First product item in the inventory list",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "The first product listed is Sauce Labs Backpack.",
+            "capture": {
+              "key": "selectedProductName",
+              "source": "text"
+            }
+          }
+        ],
+        "assertions": [
+          {
+            "assertionId": "ASSERT-01",
+            "acceptanceCriterionId": "AC-02",
+            "afterStepId": "STEP-05",
+            "type": "text",
+            "target": {
+              "description": "Product sort dropdown",
+              "role": "combobox",
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "expectedValue": "Name (A to Z)",
+            "explanation": "Verify the sort selector shows Name (A to Z)."
+          },
+          {
+            "assertionId": "ASSERT-02",
+            "acceptanceCriterionId": "AC-02",
+            "afterStepId": "STEP-06",
+            "type": "text",
+            "target": {
+              "description": "First product item in the inventory list",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "expectedValue": "Sauce Labs Backpack",
+            "explanation": "Verify the first product listed is Sauce Labs Backpack."
+          }
+        ],
+        "expectedOutcome": "The sort selector shows Name (A to Z) and the first product is Sauce Labs Backpack."
+      },
+      {
+        "scenarioId": "SC-003",
+        "title": "Sort by Price, Low to High",
+        "objective": "Verify sorting products by price low to high.",
+        "acceptanceCriterionIds": [
+          "AC-03"
+        ],
+        "preconditions": [
+          "The user is on the login page using a fresh browser context."
+        ],
+        "steps": [
+          {
+            "stepId": "STEP-01",
+            "action": "navigate",
+            "instruction": "Navigate to the SauceDemo login page.",
+            "target": {
+              "description": "Browser window",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "value": "https://www.saucedemo.com/",
+            "expectedObservation": "The login page is displayed.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-02",
+            "action": "fill",
+            "instruction": "Enter the username.",
+            "target": {
+              "description": "Username input field",
+              "role": null,
+              "accessibleName": "Username",
+              "visibleText": null,
+              "label": "Username"
+            },
+            "value": "{{SAUCEDEMO_USERNAME}}",
+            "expectedObservation": "Username is entered.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-03",
+            "action": "fill",
+            "instruction": "Enter the password.",
+            "target": {
+              "description": "Password input field",
+              "role": null,
+              "accessibleName": "Password",
+              "visibleText": null,
+              "label": "Password"
+            },
+            "value": "{{SAUCEDEMO_PASSWORD}}",
+            "expectedObservation": "Password is entered.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-04",
+            "action": "click",
+            "instruction": "Click the login button.",
+            "target": {
+              "description": "Login button",
+              "role": "button",
+              "accessibleName": "Login",
+              "visibleText": "Login",
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "The products inventory page is displayed.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-05",
+            "action": "select_option",
+            "instruction": "Select Price (low to high) from the sort dropdown.",
+            "target": {
+              "description": "Product sort dropdown",
+              "role": "combobox",
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "value": "lohi",
+            "expectedObservation": "Products are sorted by price low to high.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-06",
+            "action": "observe",
+            "instruction": "Observe the first product listed after sorting.",
+            "target": {
+              "description": "First product item in the inventory list",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "The first product listed is Sauce Labs Onesie.",
+            "capture": {
+              "key": "selectedProductName",
+              "source": "text"
+            }
+          }
+        ],
+        "assertions": [
+          {
+            "assertionId": "ASSERT-01",
+            "acceptanceCriterionId": "AC-03",
+            "afterStepId": "STEP-06",
+            "type": "text",
+            "target": {
+              "description": "First product item in the inventory list",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "expectedValue": "Sauce Labs Onesie",
+            "explanation": "Verify the first product listed is Sauce Labs Onesie when sorting by price low to high."
+          }
+        ],
+        "expectedOutcome": "The first product listed is Sauce Labs Onesie."
+      },
+      {
+        "scenarioId": "SC-004",
+        "title": "Sort by Name, Z to A",
+        "objective": "Verify sorting products by name from Z to A.",
+        "acceptanceCriterionIds": [
+          "AC-04"
+        ],
+        "preconditions": [
+          "The user is on the login page using a fresh browser context."
+        ],
+        "steps": [
+          {
+            "stepId": "STEP-01",
+            "action": "navigate",
+            "instruction": "Navigate to the SauceDemo login page.",
+            "target": {
+              "description": "Browser window",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "value": "https://www.saucedemo.com/",
+            "expectedObservation": "The login page is displayed.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-02",
+            "action": "fill",
+            "instruction": "Enter the username.",
+            "target": {
+              "description": "Username input field",
+              "role": null,
+              "accessibleName": "Username",
+              "visibleText": null,
+              "label": "Username"
+            },
+            "value": "{{SAUCEDEMO_USERNAME}}",
+            "expectedObservation": "Username is entered.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-03",
+            "action": "fill",
+            "instruction": "Enter the password.",
+            "target": {
+              "description": "Password input field",
+              "role": null,
+              "accessibleName": "Password",
+              "visibleText": null,
+              "label": "Password"
+            },
+            "value": "{{SAUCEDEMO_PASSWORD}}",
+            "expectedObservation": "Password is entered.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-04",
+            "action": "click",
+            "instruction": "Click the login button.",
+            "target": {
+              "description": "Login button",
+              "role": "button",
+              "accessibleName": "Login",
+              "visibleText": "Login",
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "The products inventory page is displayed.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-05",
+            "action": "select_option",
+            "instruction": "Select Name (Z to A) from the sort dropdown.",
+            "target": {
+              "description": "Product sort dropdown",
+              "role": "combobox",
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "value": "za",
+            "expectedObservation": "Products are sorted by name Z to A.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-06",
+            "action": "observe",
+            "instruction": "Observe the first product listed after sorting.",
+            "target": {
+              "description": "First product item in the inventory list",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "The first product listed is Test.allTheThings() T-Shirt (Red).",
+            "capture": {
+              "key": "selectedProductName",
+              "source": "text"
+            }
+          }
+        ],
+        "assertions": [
+          {
+            "assertionId": "ASSERT-01",
+            "acceptanceCriterionId": "AC-04",
+            "afterStepId": "STEP-06",
+            "type": "text",
+            "target": {
+              "description": "First product item in the inventory list",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "expectedValue": "Test.allTheThings() T-Shirt (Red)",
+            "explanation": "Verify the first product listed is Test.allTheThings() T-Shirt (Red) when sorting by name Z to A."
+          }
+        ],
+        "expectedOutcome": "The first product listed is Test.allTheThings() T-Shirt (Red)."
+      }
+    ]
+  },
+  "coverage": {
+    "gaps": [],
+    "replan": "not-needed"
+  },
+  "executionStatus": "NOT_EXECUTED"
+}

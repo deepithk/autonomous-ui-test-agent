@@ -1,0 +1,556 @@
+{
+  "generatedAt": "2026-11-11T08:03:03.398Z",
+  "planReportPath": "reports/test-plan-issue-4-2026-11-11T08-02-40-568Z.json",
+  "executionLogPath": "logs/test-execution-issue-4-2026-11-11T08-02-41-339Z.log",
+  "llmUsage": {
+    "requests": 7,
+    "reused": 0
+  },
+  "source": {
+    "repository": "deepithk/autonomous-ui-test-agent",
+    "issueNumber": 4,
+    "issueTitle": "Feature: Sort products on the inventory page",
+    "issueUrl": "https://github.com/deepithk/autonomous-ui-test-agent/issues/4",
+    "projectTitle": null,
+    "projectStatus": "RFQA",
+    "projectStatusSource": "issue-label-fallback",
+    "projectStatusWarning": "Projects V2 could not be verified. Status was obtained from the issue label. Reason: GitHub GraphQL query failed: Could not resolve to a ProjectV2 with the number 1."
+  },
+  "planningLlm": {
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite"
+  },
+  "executionLlm": {
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite"
+  },
+  "verdict": "PASSED",
+  "summary": {
+    "scenarios": {
+      "passed": 4,
+      "failed": 0,
+      "error": 0
+    },
+    "steps": {
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0,
+      "healed": 0
+    },
+    "assertions": {
+      "passed": 5,
+      "failed": 0,
+      "error": 0
+    }
+  },
+  "criteria": [
+    {
+      "id": "AC-01",
+      "title": "Successful Login",
+      "verdict": "PASSED",
+      "assertionsPassed": 1,
+      "assertionsTotal": 1,
+      "partlyChecked": false
+    },
+    {
+      "id": "AC-02",
+      "title": "Default Sort Order",
+      "verdict": "PASSED",
+      "assertionsPassed": 2,
+      "assertionsTotal": 2,
+      "partlyChecked": false
+    },
+    {
+      "id": "AC-03",
+      "title": "Sort by Price, Low to High",
+      "verdict": "PASSED",
+      "assertionsPassed": 1,
+      "assertionsTotal": 1,
+      "partlyChecked": false
+    },
+    {
+      "id": "AC-04",
+      "title": "Sort by Name, Z to A",
+      "verdict": "PASSED",
+      "assertionsPassed": 1,
+      "assertionsTotal": 1,
+      "partlyChecked": false
+    }
+  ],
+  "coverageGaps": [],
+  "failures": [],
+  "healing": [],
+  "scenarios": [
+    {
+      "scenarioId": "SC-001",
+      "title": "Successful Login",
+      "acceptanceCriterionIds": [
+        "AC-01"
+      ],
+      "status": "passed",
+      "steps": [
+        {
+          "stepId": "STEP-01",
+          "status": "passed",
+          "durationMs": 1617
+        },
+        {
+          "stepId": "STEP-02",
+          "status": "passed",
+          "durationMs": 59,
+          "resolution": {
+            "method": "deterministic",
+            "element": "textbox \"Username\"",
+            "ref": "e11",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-03",
+          "status": "passed",
+          "durationMs": 20,
+          "resolution": {
+            "method": "deterministic",
+            "element": "textbox \"Password\"",
+            "ref": "e13",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-04",
+          "status": "passed",
+          "durationMs": 1130,
+          "resolution": {
+            "method": "deterministic",
+            "element": "button \"Login\"",
+            "ref": "e15",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        }
+      ],
+      "skippedStepIds": [],
+      "assertions": [
+        {
+          "assertionId": "ASSERT-01",
+          "acceptanceCriterionId": "AC-01",
+          "afterStepId": "STEP-04",
+          "type": "url",
+          "status": "passed",
+          "expected": "https://www.saucedemo.com/inventory.html",
+          "actual": "https://www.saucedemo.com/inventory.html",
+          "explanation": "Verify that successful login navigates to the inventory page.",
+          "durationMs": 9
+        }
+      ],
+      "screenshots": [
+        {
+          "stepId": "STEP-01",
+          "reason": "step",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-001_STEP-01_step.png"
+        },
+        {
+          "stepId": "STEP-02",
+          "reason": "step",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-001_STEP-02_step.png"
+        },
+        {
+          "stepId": "STEP-03",
+          "reason": "step",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-001_STEP-03_step.png"
+        },
+        {
+          "stepId": "STEP-04",
+          "reason": "checkpoint",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-001_STEP-04_checkpoint.png"
+        }
+      ],
+      "durationMs": 3493
+    },
+    {
+      "scenarioId": "SC-002",
+      "title": "Default Sort Order",
+      "acceptanceCriterionIds": [
+        "AC-02"
+      ],
+      "status": "passed",
+      "steps": [
+        {
+          "stepId": "STEP-01",
+          "status": "passed",
+          "durationMs": 856
+        },
+        {
+          "stepId": "STEP-02",
+          "status": "passed",
+          "durationMs": 46,
+          "resolution": {
+            "method": "deterministic",
+            "element": "textbox \"Username\"",
+            "ref": "e11",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-03",
+          "status": "passed",
+          "durationMs": 21,
+          "resolution": {
+            "method": "deterministic",
+            "element": "textbox \"Password\"",
+            "ref": "e13",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-04",
+          "status": "passed",
+          "durationMs": 1079,
+          "resolution": {
+            "method": "deterministic",
+            "element": "button \"Login\"",
+            "ref": "e15",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-05",
+          "status": "passed",
+          "durationMs": 9,
+          "resolution": {
+            "method": "deterministic",
+            "element": "combobox \"Sort products\"",
+            "ref": "e38",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-06",
+          "status": "passed",
+          "durationMs": 783,
+          "resolution": {
+            "method": "llm",
+            "element": "generic",
+            "ref": "e42",
+            "reason": "Element e42 is the container for the first product item in the inventory list, Sauce Labs Backpack."
+          },
+          "captured": {
+            "key": "selectedProductName",
+            "value": "Sauce Labs Backpack carry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection. $29.99 Sauce Labs Bike Light A red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included. $9.99 Sauce Labs Bolt T-Shirt Get your testing superhero on with the Sauce Labs bolt T-shirt. From American Apparel, 100% ringspun combed cotton, heather gray with red bolt. $15.99 Sauce Labs Fleece Jacket It's not every day that you come across a midweight quarter-zip fleece jacket capable of handling everything from a relaxing day outdoors to a busy day at the office. $49.99 Sauce Labs Onesie Rib snap infant onesie for the junior automation engineer in development. Reinforced 3-snap bottom closure, two-needle hemmed sleeved and bottom won't unravel. $7.99 Test.allTheThings() T-Shirt (Red) This classic Sauce Labs t-shirt is perfect to wear when cozying up to your keyboard to automate a few tests. Super-soft and comfy ringspun combed cotton. $15.99"
+          }
+        }
+      ],
+      "skippedStepIds": [],
+      "assertions": [
+        {
+          "assertionId": "ASSERT-01",
+          "acceptanceCriterionId": "AC-02",
+          "afterStepId": "STEP-05",
+          "type": "text",
+          "status": "passed",
+          "expected": "Name (A to Z)",
+          "actual": "Name (A to Z)",
+          "explanation": "Verify the sort selector shows Name (A to Z).",
+          "durationMs": 770,
+          "matched": [
+            "combobox \"Sort products\""
+          ]
+        },
+        {
+          "assertionId": "ASSERT-02",
+          "acceptanceCriterionId": "AC-02",
+          "afterStepId": "STEP-06",
+          "type": "text",
+          "status": "passed",
+          "expected": "Sauce Labs Backpack",
+          "actual": "Sauce Labs Backpack",
+          "explanation": "Verify the first product listed is Sauce Labs Backpack.",
+          "durationMs": 1134,
+          "matched": [
+            "generic"
+          ]
+        }
+      ],
+      "screenshots": [
+        {
+          "stepId": "STEP-01",
+          "reason": "step",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-002_STEP-01_step.png"
+        },
+        {
+          "stepId": "STEP-02",
+          "reason": "step",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-002_STEP-02_step.png"
+        },
+        {
+          "stepId": "STEP-03",
+          "reason": "step",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-002_STEP-03_step.png"
+        },
+        {
+          "stepId": "STEP-04",
+          "reason": "step",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-002_STEP-04_step.png"
+        },
+        {
+          "stepId": "STEP-05",
+          "reason": "checkpoint",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-002_STEP-05_checkpoint.png"
+        },
+        {
+          "stepId": "STEP-06",
+          "reason": "checkpoint",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-002_STEP-06_checkpoint.png"
+        }
+      ],
+      "durationMs": 6077
+    },
+    {
+      "scenarioId": "SC-003",
+      "title": "Sort by Price, Low to High",
+      "acceptanceCriterionIds": [
+        "AC-03"
+      ],
+      "status": "passed",
+      "steps": [
+        {
+          "stepId": "STEP-01",
+          "status": "passed",
+          "durationMs": 1365
+        },
+        {
+          "stepId": "STEP-02",
+          "status": "passed",
+          "durationMs": 41,
+          "resolution": {
+            "method": "deterministic",
+            "element": "textbox \"Username\"",
+            "ref": "e11",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-03",
+          "status": "passed",
+          "durationMs": 22,
+          "resolution": {
+            "method": "deterministic",
+            "element": "textbox \"Password\"",
+            "ref": "e13",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-04",
+          "status": "passed",
+          "durationMs": 1077,
+          "resolution": {
+            "method": "deterministic",
+            "element": "button \"Login\"",
+            "ref": "e15",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-05",
+          "status": "passed",
+          "durationMs": 36,
+          "resolution": {
+            "method": "deterministic",
+            "element": "combobox \"Sort products\"",
+            "ref": "e38",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-06",
+          "status": "passed",
+          "durationMs": 2041,
+          "resolution": {
+            "method": "llm",
+            "element": "generic",
+            "ref": "e91",
+            "reason": "Ref e91 is the container for the first product item (Sauce Labs Onesie) in the inventory list."
+          },
+          "captured": {
+            "key": "selectedProductName",
+            "value": "Sauce Labs Onesie Rib snap infant onesie for the junior automation engineer in development. Reinforced 3-snap bottom closure, two-needle hemmed sleeved and bottom won't unravel. $7.99"
+          }
+        }
+      ],
+      "skippedStepIds": [],
+      "assertions": [
+        {
+          "assertionId": "ASSERT-01",
+          "acceptanceCriterionId": "AC-03",
+          "afterStepId": "STEP-06",
+          "type": "text",
+          "status": "passed",
+          "expected": "Sauce Labs Onesie",
+          "actual": "Sauce Labs Onesie",
+          "explanation": "Verify the first product listed is Sauce Labs Onesie when sorting by price low to high.",
+          "durationMs": 673,
+          "matched": [
+            "generic"
+          ]
+        }
+      ],
+      "screenshots": [
+        {
+          "stepId": "STEP-01",
+          "reason": "step",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-003_STEP-01_step.png"
+        },
+        {
+          "stepId": "STEP-02",
+          "reason": "step",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-003_STEP-02_step.png"
+        },
+        {
+          "stepId": "STEP-03",
+          "reason": "step",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-003_STEP-03_step.png"
+        },
+        {
+          "stepId": "STEP-04",
+          "reason": "step",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-003_STEP-04_step.png"
+        },
+        {
+          "stepId": "STEP-05",
+          "reason": "step",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-003_STEP-05_step.png"
+        },
+        {
+          "stepId": "STEP-06",
+          "reason": "checkpoint",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-003_STEP-06_checkpoint.png"
+        }
+      ],
+      "durationMs": 5951
+    },
+    {
+      "scenarioId": "SC-004",
+      "title": "Sort by Name, Z to A",
+      "acceptanceCriterionIds": [
+        "AC-04"
+      ],
+      "status": "passed",
+      "steps": [
+        {
+          "stepId": "STEP-01",
+          "status": "passed",
+          "durationMs": 884
+        },
+        {
+          "stepId": "STEP-02",
+          "status": "passed",
+          "durationMs": 42,
+          "resolution": {
+            "method": "deterministic",
+            "element": "textbox \"Username\"",
+            "ref": "e11",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-03",
+          "status": "passed",
+          "durationMs": 19,
+          "resolution": {
+            "method": "deterministic",
+            "element": "textbox \"Password\"",
+            "ref": "e13",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-04",
+          "status": "passed",
+          "durationMs": 1063,
+          "resolution": {
+            "method": "deterministic",
+            "element": "button \"Login\"",
+            "ref": "e15",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-05",
+          "status": "passed",
+          "durationMs": 37,
+          "resolution": {
+            "method": "deterministic",
+            "element": "combobox \"Sort products\"",
+            "ref": "e38",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-06",
+          "status": "passed",
+          "durationMs": 2389,
+          "resolution": {
+            "method": "llm",
+            "element": "generic",
+            "ref": "e103",
+            "reason": "Ref e103 represents the container for the first product item in the inventory list based on the current sorting order."
+          },
+          "captured": {
+            "key": "selectedProductName",
+            "value": "Test.allTheThings() T-Shirt (Red) This classic Sauce Labs t-shirt is perfect to wear when cozying up to your keyboard to automate a few tests. Super-soft and comfy ringspun combed cotton. $15.99"
+          }
+        }
+      ],
+      "skippedStepIds": [],
+      "assertions": [
+        {
+          "assertionId": "ASSERT-01",
+          "acceptanceCriterionId": "AC-04",
+          "afterStepId": "STEP-06",
+          "type": "text",
+          "status": "passed",
+          "expected": "Test.allTheThings() T-Shirt (Red)",
+          "actual": "Test.allTheThings() T-Shirt (Red)",
+          "explanation": "Verify the first product listed is Test.allTheThings() T-Shirt (Red) when sorting by name Z to A.",
+          "durationMs": 1192,
+          "matched": [
+            "generic"
+          ]
+        }
+      ],
+      "screenshots": [
+        {
+          "stepId": "STEP-01",
+          "reason": "step",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-004_STEP-01_step.png"
+        },
+        {
+          "stepId": "STEP-02",
+          "reason": "step",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-004_STEP-02_step.png"
+        },
+        {
+          "stepId": "STEP-03",
+          "reason": "step",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-004_STEP-03_step.png"
+        },
+        {
+          "stepId": "STEP-04",
+          "reason": "step",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-004_STEP-04_step.png"
+        },
+        {
+          "stepId": "STEP-05",
+          "reason": "step",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-004_STEP-05_step.png"
+        },
+        {
+          "stepId": "STEP-06",
+          "reason": "checkpoint",
+          "path": "screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-004_STEP-06_checkpoint.png"
+        }
+      ],
+      "durationMs": 6525
+    }
+  ]
+}

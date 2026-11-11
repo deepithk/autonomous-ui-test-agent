@@ -347,6 +347,8 @@ Evidence:
 - [Execution log](evidence/logs/test-execution-2026-11-11T07-04-34-758Z.log)
 - [Screenshots](evidence/screenshots/2026-11-11T07-04-34-758Z/)
 
+A run for issue #4 (sorting), started by the GitHub Action, is in [the execution report](evidence/reports/test-execution-issue-4-issue-4-2026-11-11T08-02-41-339Z.md); all four of its criteria passed.
+
 ## 10. Important Implementation Note
 
 The reference scenarios define the expected functional coverage and

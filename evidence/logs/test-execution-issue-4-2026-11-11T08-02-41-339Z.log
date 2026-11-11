@@ -1,0 +1,64 @@
+2026-11-11T08:02:41.340Z RUN START plan=test-plan-issue-4-2026-11-11T08-02-40-568Z.json llm=gemini/gemini-3.5-flash-lite
+2026-11-11T08:02:41.351Z [SC-001] SCENARIO START "Successful Login"
+2026-11-11T08:02:43.257Z [SC-001] [STEP-01] navigate "Browser window" PASSED 1617 ms
+2026-11-11T08:02:43.407Z [SC-001] [STEP-01] SCREENSHOT step screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-001_STEP-01_step.png
+2026-11-11T08:02:43.466Z [SC-001] [STEP-02] fill "Username input field" -> textbox "Username" (matched by plan fields) PASSED 59 ms
+2026-11-11T08:02:43.496Z [SC-001] [STEP-02] SCREENSHOT step screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-001_STEP-02_step.png
+2026-11-11T08:02:43.516Z [SC-001] [STEP-03] fill "Password input field" -> textbox "Password" (matched by plan fields) PASSED 20 ms
+2026-11-11T08:02:43.548Z [SC-001] [STEP-03] SCREENSHOT step screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-001_STEP-03_step.png
+2026-11-11T08:02:44.678Z [SC-001] [STEP-04] click "Login button" -> button "Login" (matched by plan fields) PASSED 1130 ms
+2026-11-11T08:02:44.688Z [SC-001] [ASSERT-01] AC-01 url after STEP-04 expected="https://www.saucedemo.com/inventory.html" actual="https://www.saucedemo.com/inventory.html" PASSED
+2026-11-11T08:02:44.738Z [SC-001] [STEP-04] SCREENSHOT checkpoint screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-001_STEP-04_checkpoint.png
+2026-11-11T08:02:44.843Z [SC-001] SCENARIO END PASSED 3493 ms
+2026-11-11T08:02:44.843Z [SC-002] SCENARIO START "Default Sort Order"
+2026-11-11T08:02:45.951Z [SC-002] [STEP-01] navigate "Browser window" PASSED 856 ms
+2026-11-11T08:02:46.033Z [SC-002] [STEP-01] SCREENSHOT step screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-002_STEP-01_step.png
+2026-11-11T08:02:46.079Z [SC-002] [STEP-02] fill "Username input field" -> textbox "Username" (matched by plan fields) PASSED 46 ms
+2026-11-11T08:02:46.111Z [SC-002] [STEP-02] SCREENSHOT step screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-002_STEP-02_step.png
+2026-11-11T08:02:46.132Z [SC-002] [STEP-03] fill "Password input field" -> textbox "Password" (matched by plan fields) PASSED 21 ms
+2026-11-11T08:02:46.163Z [SC-002] [STEP-03] SCREENSHOT step screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-002_STEP-03_step.png
+2026-11-11T08:02:47.242Z [SC-002] [STEP-04] click "Login button" -> button "Login" (matched by plan fields) PASSED 1079 ms
+2026-11-11T08:02:47.293Z [SC-002] [STEP-04] SCREENSHOT step screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-002_STEP-04_step.png
+2026-11-11T08:02:47.302Z [SC-002] [STEP-05] observe "Product sort dropdown" -> combobox "Sort products" (matched by plan fields) PASSED 9 ms
+2026-11-11T08:02:48.072Z [SC-002] [ASSERT-01] AC-02 text after STEP-05 expected="Name (A to Z)" actual="Name (A to Z)" matched=[combobox "Sort products"] PASSED
+2026-11-11T08:02:48.142Z [SC-002] [STEP-05] SCREENSHOT checkpoint screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-002_STEP-05_checkpoint.png
+2026-11-11T08:02:48.925Z [SC-002] [STEP-06] observe "First product item in the inventory list" -> generic (chosen by LLM: "Element e42 is the container for the first product item in the inventory list, Sauce Labs Backpack.") captured selectedProductName="Sauce Labs Backpack carry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection. $29.99 Sauce Labs Bike Light A red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included. $9.99 Sauce Labs Bolt T-Shirt Get your testing superhero on with the Sauce Labs bolt T-shirt. From American Apparel, 100% ringspun combed cotton, heather gray with red bolt. $15.99 Sauce Labs Fleece Jacket It's not every day that you come across a midweight quarter-zip fleece jacket capable of handling everything from a relaxing day outdoors to a busy day at the office. $49.99 Sauce Labs Onesie Rib snap infant onesie for the junior automation engineer in development. Reinforced 3-snap bottom closure, two-needle hemmed sleeved and bottom won't unravel. $7.99 Test.allTheThings() T-Shirt (Red) This classic Sauce Labs t-shirt is perfect to wear when cozying up to your keyboard to automate a few tests. Super-soft and comfy ringspun combed cotton. $15.99" PASSED 783 ms
+2026-11-11T08:02:50.059Z [SC-002] [ASSERT-02] AC-02 text after STEP-06 expected="Sauce Labs Backpack" actual="Sauce Labs Backpack" matched=[generic] PASSED
+2026-11-11T08:02:50.111Z [SC-002] [STEP-06] SCREENSHOT checkpoint screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-002_STEP-06_checkpoint.png
+2026-11-11T08:02:50.920Z [SC-002] SCENARIO END PASSED 6077 ms
+2026-11-11T08:02:50.921Z [SC-003] SCENARIO START "Sort by Price, Low to High"
+2026-11-11T08:02:52.525Z [SC-003] [STEP-01] navigate "Browser window" PASSED 1365 ms
+2026-11-11T08:02:52.632Z [SC-003] [STEP-01] SCREENSHOT step screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-003_STEP-01_step.png
+2026-11-11T08:02:52.673Z [SC-003] [STEP-02] fill "Username input field" -> textbox "Username" (matched by plan fields) PASSED 41 ms
+2026-11-11T08:02:52.712Z [SC-003] [STEP-02] SCREENSHOT step screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-003_STEP-02_step.png
+2026-11-11T08:02:52.734Z [SC-003] [STEP-03] fill "Password input field" -> textbox "Password" (matched by plan fields) PASSED 22 ms
+2026-11-11T08:02:52.763Z [SC-003] [STEP-03] SCREENSHOT step screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-003_STEP-03_step.png
+2026-11-11T08:02:53.840Z [SC-003] [STEP-04] click "Login button" -> button "Login" (matched by plan fields) PASSED 1077 ms
+2026-11-11T08:02:53.890Z [SC-003] [STEP-04] SCREENSHOT step screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-003_STEP-04_step.png
+2026-11-11T08:02:53.926Z [SC-003] [STEP-05] select_option "Product sort dropdown" -> combobox "Sort products" (matched by plan fields) PASSED 36 ms
+2026-11-11T08:02:53.985Z [SC-003] [STEP-05] SCREENSHOT step screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-003_STEP-05_step.png
+2026-11-11T08:02:56.026Z [SC-003] [STEP-06] observe "First product item in the inventory list" -> generic (chosen by LLM: "Ref e91 is the container for the first product item (Sauce Labs Onesie) in the inventory list.") captured selectedProductName="Sauce Labs Onesie Rib snap infant onesie for the junior automation engineer in development. Reinforced 3-snap bottom closure, two-needle hemmed sleeved and bottom won't unravel. $7.99" PASSED 2041 ms
+2026-11-11T08:02:56.699Z [SC-003] [ASSERT-01] AC-03 text after STEP-06 expected="Sauce Labs Onesie" actual="Sauce Labs Onesie" matched=[generic] PASSED
+2026-11-11T08:02:56.767Z [SC-003] [STEP-06] SCREENSHOT checkpoint screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-003_STEP-06_checkpoint.png
+2026-11-11T08:02:56.872Z [SC-003] SCENARIO END PASSED 5951 ms
+2026-11-11T08:02:56.872Z [SC-004] SCENARIO START "Sort by Name, Z to A"
+2026-11-11T08:02:57.990Z [SC-004] [STEP-01] navigate "Browser window" PASSED 884 ms
+2026-11-11T08:02:58.103Z [SC-004] [STEP-01] SCREENSHOT step screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-004_STEP-01_step.png
+2026-11-11T08:02:58.146Z [SC-004] [STEP-02] fill "Username input field" -> textbox "Username" (matched by plan fields) PASSED 42 ms
+2026-11-11T08:02:58.195Z [SC-004] [STEP-02] SCREENSHOT step screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-004_STEP-02_step.png
+2026-11-11T08:02:58.214Z [SC-004] [STEP-03] fill "Password input field" -> textbox "Password" (matched by plan fields) PASSED 19 ms
+2026-11-11T08:02:58.459Z [SC-004] [STEP-03] SCREENSHOT step screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-004_STEP-03_step.png
+2026-11-11T08:02:59.523Z [SC-004] [STEP-04] click "Login button" -> button "Login" (matched by plan fields) PASSED 1063 ms
+2026-11-11T08:02:59.573Z [SC-004] [STEP-04] SCREENSHOT step screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-004_STEP-04_step.png
+2026-11-11T08:02:59.610Z [SC-004] [STEP-05] select_option "Product sort dropdown" -> combobox "Sort products" (matched by plan fields) PASSED 37 ms
+2026-11-11T08:02:59.668Z [SC-004] [STEP-05] SCREENSHOT step screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-004_STEP-05_step.png
+2026-11-11T08:03:02.057Z [SC-004] [STEP-06] observe "First product item in the inventory list" -> generic (chosen by LLM: "Ref e103 represents the container for the first product item in the inventory list based on the current sorting order.") captured selectedProductName="Test.allTheThings() T-Shirt (Red) This classic Sauce Labs t-shirt is perfect to wear when cozying up to your keyboard to automate a few tests. Super-soft and comfy ringspun combed cotton. $15.99" PASSED 2389 ms
+2026-11-11T08:03:03.250Z [SC-004] [ASSERT-01] AC-04 text after STEP-06 expected="Test.allTheThings() T-Shirt (Red)" actual="Test.allTheThings() T-Shirt (Red)" matched=[generic] PASSED
+2026-11-11T08:03:03.304Z [SC-004] [STEP-06] SCREENSHOT checkpoint screenshots/issue-4-2026-11-11T08-02-41-339Z/SC-004_STEP-06_checkpoint.png
+2026-11-11T08:03:03.397Z [SC-004] SCENARIO END PASSED 6525 ms
+2026-11-11T08:03:03.399Z [AC-01] CRITERION PASSED 1/1
+2026-11-11T08:03:03.399Z [AC-02] CRITERION PASSED 2/2
+2026-11-11T08:03:03.399Z [AC-03] CRITERION PASSED 1/1
+2026-11-11T08:03:03.399Z [AC-04] CRITERION PASSED 1/1
+2026-11-11T08:03:03.399Z LLM requests=7 answers_reused=0
+2026-11-11T08:03:03.399Z RUN END PASSED report=test-execution-issue-4-issue-4-2026-11-11T08-02-41-339Z.json

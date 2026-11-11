@@ -33,6 +33,15 @@ A second run shows how the agent reports a failing test. It used the SauceDemo a
 - [Failure log](evidence/logs/test-execution-failure-demo-2026-11-11T07-02-18-567Z.log)
 - [Screenshots](evidence/screenshots/failure-demo-2026-11-11T07-02-18-567Z/)
 
+### A run started by the GitHub Action
+
+Issue #4 (sorting products) was planned and executed by the `rfqa-agent.yml` workflow after its `status: RFQA` label was set. All four criteria passed:
+
+- [Report](evidence/reports/test-execution-issue-4-issue-4-2026-11-11T08-02-41-339Z.md)
+- [Plan](evidence/reports/test-plan-issue-4-2026-11-11T08-02-40-568Z.json)
+- [Execution log](evidence/logs/test-execution-issue-4-2026-11-11T08-02-41-339Z.log)
+- [Screenshots](evidence/screenshots/issue-4-2026-11-11T08-02-41-339Z/)
+
 Design documents: [TEST_PLAN.md](TEST_PLAN.md) (architecture, prompt strategy, guardrails) and [SCENARIOS.md](SCENARIOS.md) (acceptance criteria and scenarios).
 
 ## Quick start (about 5 minutes, no GitHub needed)
