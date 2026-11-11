@@ -302,7 +302,7 @@ depend on a fixed product.
 | Assertion | What it checks |
 |---|---|
 | url | The current page URL equals the expected URL or path |
-| text | An element's displayed text equals the expected text |
+| text | An element's displayed text equals the expected text (for a dropdown, its selected option) |
 | element_count | The number of matching elements equals the expected number, including 0 |
 | visibility | A matching element is present, or absent when the expectation is "hidden" |
 | input_value | The value in an input field |

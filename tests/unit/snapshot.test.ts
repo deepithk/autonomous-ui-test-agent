@@ -165,6 +165,20 @@ describe('getElementText', () => {
     expect(getElementText(elements, indexOfRef('e124'))).toBe('1');
   });
 
+  it('reads the selected option of a dropdown, not its label', () => {
+    expect(getElementText(elements, indexOfRef('e38'))).toBe(
+      'Name (A to Z)'
+    );
+  });
+
+  it('falls back to the label when a dropdown has no selected option', () => {
+    const [box] = parseSnapshot(
+      '- combobox "Sort products" [ref=e1]:\n  - option "A"'
+    );
+
+    expect(getElementText([box] as never, 0)).toBe('Sort products');
+  });
+
   it('falls back to the name for leaf elements', () => {
     expect(getElementText(elements, indexOfRef('e54'))).toBe(
       'Add to cart'

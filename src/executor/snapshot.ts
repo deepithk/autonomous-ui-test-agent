@@ -172,6 +172,25 @@ export function getElementText(
     return element.text;
   }
 
+  // A dropdown shows its selected option. Its own name is only a label
+  // such as "Sort products", which is not what the page displays.
+  if (element.role === 'combobox' || element.role === 'listbox') {
+    for (let next = index + 1; next < elements.length; next++) {
+      const candidate = elements[next];
+
+      if (!candidate || candidate.depth <= element.depth) {
+        break;
+      }
+
+      if (
+        candidate.role === 'option' &&
+        candidate.attributes.includes('selected')
+      ) {
+        return candidate.name;
+      }
+    }
+  }
+
   const descendants: string[] = [];
 
   for (let next = index + 1; next < elements.length; next++) {
