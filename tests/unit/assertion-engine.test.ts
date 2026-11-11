@@ -370,16 +370,61 @@ describe('AssertionEngine', () => {
     expect(results[0]?.error).toBe('provider down');
   });
 
+  it('asks the LLM again when re-checking, so one wrong answer is not repeated', async () => {
+    const { engine, llm } = setup({ recoveryAttempts: 1 });
+
+    const generate = llm.generateStructured as ReturnType<typeof vi.fn>;
+
+    // First answer wrongly finds the cart button as a badge...
+    generate.mockResolvedValueOnce({
+      text: JSON.stringify({ refs: ['e124'], reason: 'Cart.' }),
+      model: 'test'
+    });
+
+    // ...and the second answer, on the same page, corrects it.
+    generate.mockResolvedValueOnce({
+      text: JSON.stringify({ refs: [], reason: 'No badge.' }),
+      model: 'test'
+    });
+
+    const [result] = await engine.evaluateMany([
+      assertion({ type: 'element_count', expectedValue: '0' })
+    ]);
+
+    expect(result?.status).toBe('passed');
+    expect(result?.actual).toBe('0');
+    expect(generate).toHaveBeenCalledTimes(2);
+  });
+
+  it('records the elements that were matched', async () => {
+    const { engine } = setup({ refs: ['e124'] });
+
+    const [result] = await engine.evaluateMany([
+      assertion({ type: 'element_count', expectedValue: '0' })
+    ]);
+
+    expect(result?.status).toBe('failed');
+    expect(result?.matched).toEqual(['button "Cart, 1 items"']);
+  });
+
   it('re-checks only the assertions that failed', async () => {
     const { engine, llm } = setup({ recoveryAttempts: 1 });
 
-    (llm.generateStructured as ReturnType<typeof vi.fn>).mockResolvedValue({
+    const generate = llm.generateStructured as ReturnType<typeof vi.fn>;
+
+    generate.mockResolvedValueOnce({
       text: JSON.stringify({
         results: [
           { id: 'T1', refs: ['e53'], reason: 'Price.' },
           { id: 'T2', refs: [], reason: 'None.' }
         ]
       }),
+      model: 'test'
+    });
+
+    // The re-check of the one that still fails is a single-target request.
+    generate.mockResolvedValueOnce({
+      text: JSON.stringify({ refs: [], reason: 'None.' }),
       model: 'test'
     });
 
@@ -401,9 +446,9 @@ describe('AssertionEngine', () => {
       'failed'
     ]);
 
-    // First pass asks about both. On the retry the page is identical,
-    // so the earlier answer for the one that still fails is reused.
-    expect(llm.generateStructured).toHaveBeenCalledTimes(1);
+    // First pass asks about both in one request. The re-check asks again
+    // about only the one that still fails.
+    expect(generate).toHaveBeenCalledTimes(2);
   });
 
   it('re-checks with a fresh snapshot before failing', async () => {

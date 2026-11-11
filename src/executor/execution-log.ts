@@ -77,11 +77,20 @@ export function formatLogEvent(
     case 'assertion_finished': {
       const { result } = event;
 
+      // The elements the lookup found, so a wrong match is visible.
+      const found =
+        result.matched && result.matched.length > 0
+          ? ` matched=[${result.matched
+              .slice(0, 3)
+              .map(oneLine)
+              .join('; ')}${result.matched.length > 3 ? '; ...' : ''}]`
+          : '';
+
       const detail =
         result.status === 'error'
           ? `ERROR: ${oneLine(result.error ?? 'could not be checked')}`
           : `expected=${quote(result.expected)} ` +
-            `actual=${quote(result.actual)} ` +
+            `actual=${quote(result.actual)}${found} ` +
             result.status.toUpperCase();
 
       return (

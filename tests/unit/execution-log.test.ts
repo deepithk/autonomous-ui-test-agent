@@ -220,6 +220,31 @@ describe('formatLogEvent', () => {
       'actual="https://www.saucedemo.com/inventory.html" PASSED'
     );
 
+    const withMatches = formatLogEvent(
+      {
+        type: 'assertion_finished',
+        scenarioId: 'SC-003',
+        result: {
+          assertionId: 'ASSERT-09',
+          acceptanceCriterionId: 'AC-06',
+          afterStepId: 'STEP-09',
+          type: 'element_count',
+          status: 'failed',
+          expected: '0',
+          actual: '1',
+          explanation: 'No badge.',
+          durationMs: 1,
+          matched: ['button "Cart, empty"']
+        }
+      },
+      AT
+    );
+
+    expect(withMatches).toBe(
+      `${STAMP} [SC-003] [ASSERT-09] AC-06 element_count after STEP-09 ` +
+      'expected="0" actual="1" matched=[button "Cart, empty"] FAILED'
+    );
+
     const errored = formatLogEvent(
       {
         type: 'assertion_finished',

@@ -46,11 +46,19 @@ export interface AssertionResult {
   explanation: string;
   durationMs: number;
   error?: string;
+
+  /**
+   * The elements found for the assertion's target, when it needed
+   * a lookup. Shows what the LLM pointed at, so a wrong match can be
+   * spotted in a report.
+   */
+  matched?: string[];
 }
 
 interface Outcome {
   passed: boolean;
   actual: string;
+  matched?: string[];
 }
 
 interface PageState {
@@ -102,11 +110,14 @@ function judge(
   found: ResolvedTarget[],
   page: PageState
 ): Outcome {
+  const matched = found.map(entry => entry.element);
+
   switch (type) {
     case 'element_count':
       return {
         passed: found.length === Number(expected),
-        actual: String(found.length)
+        actual: String(found.length),
+        matched
       };
 
     case 'visibility': {
@@ -116,14 +127,15 @@ function judge(
 
       return {
         passed: wantAbsent ? found.length === 0 : found.length > 0,
-        actual: found.length > 0 ? 'visible' : 'not found'
+        actual: found.length > 0 ? 'visible' : 'not found',
+        matched
       };
     }
 
     case 'text':
     case 'input_value': {
       if (found.length === 0) {
-        return { passed: false, actual: 'element not found' };
+        return { passed: false, actual: 'element not found', matched };
       }
 
       const values = found.map(entry =>
@@ -136,7 +148,8 @@ function judge(
 
       return {
         passed: values.includes(normalize(expected)),
-        actual: values.join(' | ')
+        actual: values.join(' | '),
+        matched
       };
     }
 
@@ -239,9 +252,12 @@ export class AssertionEngine {
       let outcomes: Array<Outcome | Error>;
 
       try {
+        // A re-check asks the LLM again instead of reusing its earlier
+        // answer, so one wrong answer is not repeated.
         outcomes = await this.checkMany(
           pending,
-          await this.readPage()
+          await this.readPage(),
+          attempt > 0
         );
       } catch (error) {
         // The page could not be read: nothing pending can be checked.
@@ -269,6 +285,10 @@ export class AssertionEngine {
 
         result.actual = outcome.actual;
         result.status = outcome.passed ? 'passed' : 'failed';
+
+        if (outcome.matched !== undefined) {
+          result.matched = outcome.matched;
+        }
 
         if (!outcome.passed) {
           stillFailing.push(item);
@@ -322,7 +342,8 @@ export class AssertionEngine {
    */
   private async checkMany(
     prepared: Prepared[],
-    page: PageState
+    page: PageState,
+    fresh: boolean
   ): Promise<Array<Outcome | Error>> {
     const outcomes: Array<Outcome | Error | undefined> = prepared.map(
       item =>
@@ -345,7 +366,8 @@ export class AssertionEngine {
             position => (prepared[position] as Prepared).target
           ),
           page.elements,
-          page.yaml
+          page.yaml,
+          { fresh }
         );
 
         lookups.forEach((position, order) => {

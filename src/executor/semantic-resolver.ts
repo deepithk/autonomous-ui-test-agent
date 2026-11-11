@@ -38,6 +38,15 @@ export interface LlmUsage {
   reused: number;
 }
 
+export interface LookupOptions {
+  /**
+   * Ask the LLM again even if it already answered for this page and
+   * question. Used when re-checking a failed assertion, so that one
+   * wrong answer is not repeated.
+   */
+  fresh?: boolean;
+}
+
 export class SemanticResolverError extends Error {
   constructor(message: string) {
     super(message);
@@ -408,7 +417,8 @@ export class SemanticResolver {
   async resolveAll(
     target: SemanticTarget,
     elements: SnapshotElement[],
-    snapshotYaml: string
+    snapshotYaml: string,
+    options: LookupOptions = {}
   ): Promise<ResolvedTarget[]> {
     if (this.llm === null) {
       return findByFields(target, elements).map(index => {
@@ -426,7 +436,9 @@ export class SemanticResolver {
 
     const key = this.cacheKey('all', target, '', snapshotYaml);
 
-    const known = this.cache.get(key) as ResolvedTarget[] | undefined;
+    const known = options.fresh
+      ? undefined
+      : (this.cache.get(key) as ResolvedTarget[] | undefined);
 
     if (known) {
       this.reused++;
@@ -494,7 +506,8 @@ export class SemanticResolver {
   async resolveMany(
     targets: SemanticTarget[],
     elements: SnapshotElement[],
-    snapshotYaml: string
+    snapshotYaml: string,
+    options: LookupOptions = {}
   ): Promise<ResolvedTarget[][]> {
     if (this.llm === null) {
       return Promise.all(
@@ -506,9 +519,13 @@ export class SemanticResolver {
 
     const answers: Array<ResolvedTarget[] | undefined> = targets.map(
       target => {
-        const known = this.cache.get(
-          this.cacheKey('all', target, '', snapshotYaml)
-        ) as ResolvedTarget[] | undefined;
+        // A fresh lookup ignores earlier answers, so the LLM is asked
+        // again about everything.
+        const known = options.fresh
+          ? undefined
+          : (this.cache.get(
+              this.cacheKey('all', target, '', snapshotYaml)
+            ) as ResolvedTarget[] | undefined);
 
         if (known) {
           this.reused++;
@@ -530,7 +547,8 @@ export class SemanticResolver {
       answers[index] = await this.resolveAll(
         targets[index] as SemanticTarget,
         elements,
-        snapshotYaml
+        snapshotYaml,
+        options
       );
     } else if (missing.length > 1) {
       const asked = missing.map(index => targets[index] as SemanticTarget);

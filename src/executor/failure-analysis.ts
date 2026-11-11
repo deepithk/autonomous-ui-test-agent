@@ -193,7 +193,13 @@ export function analyzeFailures(
         summary:
           `${assertion.assertionId} (${assertion.acceptanceCriterionId}) ` +
           `expected "${shorten(assertion.expected)}" but the page ` +
-          `showed "${shorten(assertion.actual)}"`,
+          `showed "${shorten(assertion.actual)}"` +
+          (assertion.matched && assertion.matched.length > 0
+            ? ` (elements found: ${assertion.matched
+                .slice(0, 3)
+                .map(entry => shorten(entry, 80))
+                .join('; ')})`
+            : ''),
         advice:
           'The page was checked and does not match the acceptance ' +
           `criterion ${assertion.acceptanceCriterionId}. If the page ` +

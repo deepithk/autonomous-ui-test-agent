@@ -254,6 +254,52 @@ describe('SemanticResolver', () => {
       expect(generateStructured).toHaveBeenCalledTimes(2);
     });
 
+    it('asks again when a fresh answer is requested, and remembers the newest', async () => {
+      const generateStructured = vi
+        .fn()
+        .mockResolvedValueOnce({
+          text: JSON.stringify({ refs: ['e124'], reason: 'Cart.' }),
+          model: 'test'
+        })
+        .mockResolvedValueOnce({
+          text: JSON.stringify({ refs: [], reason: 'No badge.' }),
+          model: 'test'
+        });
+
+      const resolver = new SemanticResolver({
+        providerName: 'gemini',
+        generateStructured
+      });
+
+      const badge = target({ description: 'Cart badge' });
+
+      const first = await resolver.resolveAll(
+        badge,
+        elements,
+        INVENTORY_YAML
+      );
+
+      const second = await resolver.resolveAll(
+        badge,
+        elements,
+        INVENTORY_YAML,
+        { fresh: true }
+      );
+
+      const third = await resolver.resolveAll(
+        badge,
+        elements,
+        INVENTORY_YAML
+      );
+
+      expect(first).toHaveLength(1);
+      expect(second).toHaveLength(0);
+
+      // A normal lookup now reuses the corrected answer.
+      expect(third).toHaveLength(0);
+      expect(generateStructured).toHaveBeenCalledTimes(2);
+    });
+
     it('does not remember failures', async () => {
       const { llm, generateStructured } = createLlm(
         JSON.stringify({ ref: '', reason: 'Nothing.' })
