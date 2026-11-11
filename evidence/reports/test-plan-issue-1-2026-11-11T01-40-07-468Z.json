@@ -1,0 +1,469 @@
+{
+  "generatedAt": "2026-11-11T01:40:07.466Z",
+  "source": {
+    "repository": "deepithk/autonomous-ui-test-agent",
+    "issueNumber": 1,
+    "issueTitle": "Feature: Add and Remove Products from Shopping Cart",
+    "issueUrl": "https://github.com/deepithk/autonomous-ui-test-agent/issues/1",
+    "projectTitle": "Autonomous UI QA Board",
+    "projectStatus": "RFQA",
+    "projectStatusSource": "project-v2"
+  },
+  "llm": {
+    "provider": "gemini",
+    "model": "gemini-3.6-flash"
+  },
+  "acceptanceCriteria": [
+    {
+      "id": "AC-01",
+      "title": "Successful Login",
+      "description": "Given the user is on the login page,\n\nWhen valid credentials are entered,\n\nThen the products inventory page should be displayed."
+    },
+    {
+      "id": "AC-02",
+      "title": "Add Product to Cart",
+      "description": "Given the user is on the products inventory page,\n\nWhen the user selects Add to cart for a product,\n\nThen the selected product should be added to the shopping cart."
+    },
+    {
+      "id": "AC-03",
+      "title": "Update Cart Count",
+      "description": "Given a product has been added,\n\nThen the shopping cart badge should display the correct item count."
+    },
+    {
+      "id": "AC-04",
+      "title": "Verify Cart Contents",
+      "description": "Given a product has been added,\n\nWhen the user opens the shopping cart,\n\nThen the cart should display the correct product name, quantity and price."
+    },
+    {
+      "id": "AC-05",
+      "title": "Remove Product",
+      "description": "Given the shopping cart contains a product,\n\nWhen the user selects Remove,\n\nThen the product should be removed from the cart."
+    },
+    {
+      "id": "AC-06",
+      "title": "Verify Empty Cart",
+      "description": "Given the product has been removed,\n\nThen the shopping cart should contain no products and the cart badge should reflect the empty state."
+    }
+  ],
+  "generatedPlan": {
+    "planTitle": "SauceDemo Shopping Cart Management Functional Test Plan",
+    "summary": "Functional UI test plan covering user authentication, adding products to the shopping cart, updating cart badge count, verifying detailed cart contents, removing products, and confirming empty cart state on SauceDemo.",
+    "scenarios": [
+      {
+        "scenarioId": "SC-001",
+        "title": "User Login and Add Product to Shopping Cart",
+        "objective": "Verify that a user can log in, add a dynamic product to the cart, and observe the cart badge count increment.",
+        "acceptanceCriterionIds": [
+          "AC-01",
+          "AC-02",
+          "AC-03"
+        ],
+        "preconditions": [
+          "The application login page is accessible at https://www.saucedemo.com/."
+        ],
+        "steps": [
+          {
+            "stepId": "STEP-01",
+            "action": "navigate",
+            "instruction": "Navigate to the SauceDemo login page.",
+            "target": {
+              "description": "SauceDemo Login URL",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "value": "https://www.saucedemo.com/",
+            "expectedObservation": "The login form is visible on the screen.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-02",
+            "action": "fill",
+            "instruction": "Enter the username into the Username field.",
+            "target": {
+              "description": "Username input field",
+              "role": "textbox",
+              "accessibleName": "Username",
+              "visibleText": null,
+              "label": "Username"
+            },
+            "value": "{{SAUCEDEMO_USERNAME}}",
+            "expectedObservation": "Username input field contains the provided credential token.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-03",
+            "action": "fill",
+            "instruction": "Enter the password into the Password field.",
+            "target": {
+              "description": "Password input field",
+              "role": "textbox",
+              "accessibleName": "Password",
+              "visibleText": null,
+              "label": "Password"
+            },
+            "value": "{{SAUCEDEMO_PASSWORD}}",
+            "expectedObservation": "Password input field receives input.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-04",
+            "action": "click",
+            "instruction": "Click the Login button to submit credentials.",
+            "target": {
+              "description": "Login button",
+              "role": "button",
+              "accessibleName": "Login",
+              "visibleText": "Login",
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "The user is authenticated and redirected to the inventory page.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-05",
+            "action": "observe",
+            "instruction": "Observe and capture the title of the first available product.",
+            "target": {
+              "description": "First product title on inventory page",
+              "role": "link",
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "The product title is displayed on the product card.",
+            "capture": {
+              "key": "selectedProductName",
+              "source": "text"
+            }
+          },
+          {
+            "stepId": "STEP-06",
+            "action": "observe",
+            "instruction": "Observe and capture the price of the selected product.",
+            "target": {
+              "description": "Price display of the selected product card",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "The price text is visible on the selected product card.",
+            "capture": {
+              "key": "selectedProductPrice",
+              "source": "text"
+            }
+          },
+          {
+            "stepId": "STEP-07",
+            "action": "click",
+            "instruction": "Click the Add to Cart button for the selected product.",
+            "target": {
+              "description": "Add to cart button for selected product",
+              "role": "button",
+              "accessibleName": "Add to cart",
+              "visibleText": "Add to cart",
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "The button text changes to Remove and the shopping cart badge displays 1.",
+            "capture": null
+          }
+        ],
+        "assertions": [
+          {
+            "assertionId": "ASSERT-01",
+            "acceptanceCriterionId": "AC-01",
+            "type": "url",
+            "target": {
+              "description": "Browser page URL",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "expectedValue": "https://www.saucedemo.com/inventory.html",
+            "explanation": "Validates that successful login navigates to the products inventory page."
+          },
+          {
+            "assertionId": "ASSERT-02",
+            "acceptanceCriterionId": "AC-02",
+            "type": "visibility",
+            "target": {
+              "description": "Remove button on product card",
+              "role": "button",
+              "accessibleName": "Remove",
+              "visibleText": "Remove",
+              "label": null
+            },
+            "expectedValue": "visible",
+            "explanation": "Validates that the selected product is marked as added by showing the Remove button."
+          },
+          {
+            "assertionId": "ASSERT-03",
+            "acceptanceCriterionId": "AC-03",
+            "type": "text",
+            "target": {
+              "description": "Shopping cart badge count",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "expectedValue": "1",
+            "explanation": "Validates that adding one product updates the shopping cart badge count to 1."
+          }
+        ],
+        "expectedOutcome": "User logs in successfully, adds a product to the cart, and sees the cart count update to 1."
+      },
+      {
+        "scenarioId": "SC-002",
+        "title": "Verify Shopping Cart Contents and Remove Product",
+        "objective": "Verify that added product details (name, quantity, price) match accurately inside the cart view, and that removing the product resets cart state completely.",
+        "acceptanceCriterionIds": [
+          "AC-04",
+          "AC-05",
+          "AC-06"
+        ],
+        "preconditions": [
+          "The application login page is accessible at https://www.saucedemo.com/."
+        ],
+        "steps": [
+          {
+            "stepId": "STEP-01",
+            "action": "navigate",
+            "instruction": "Navigate to the SauceDemo login page.",
+            "target": {
+              "description": "SauceDemo Login URL",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "value": "https://www.saucedemo.com/",
+            "expectedObservation": "The login page is loaded.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-02",
+            "action": "fill",
+            "instruction": "Enter the username.",
+            "target": {
+              "description": "Username field",
+              "role": "textbox",
+              "accessibleName": "Username",
+              "visibleText": null,
+              "label": "Username"
+            },
+            "value": "{{SAUCEDEMO_USERNAME}}",
+            "expectedObservation": "Username field is populated.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-03",
+            "action": "fill",
+            "instruction": "Enter the password.",
+            "target": {
+              "description": "Password field",
+              "role": "textbox",
+              "accessibleName": "Password",
+              "visibleText": null,
+              "label": "Password"
+            },
+            "value": "{{SAUCEDEMO_PASSWORD}}",
+            "expectedObservation": "Password field is populated.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-04",
+            "action": "click",
+            "instruction": "Click the Login button.",
+            "target": {
+              "description": "Login button",
+              "role": "button",
+              "accessibleName": "Login",
+              "visibleText": "Login",
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "Redirected to the inventory page.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-05",
+            "action": "observe",
+            "instruction": "Observe and capture the selected product name.",
+            "target": {
+              "description": "First available product name",
+              "role": "link",
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "Product name is displayed.",
+            "capture": {
+              "key": "selectedProductName",
+              "source": "text"
+            }
+          },
+          {
+            "stepId": "STEP-06",
+            "action": "observe",
+            "instruction": "Observe and capture the selected product price.",
+            "target": {
+              "description": "First available product price",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "Product price is displayed.",
+            "capture": {
+              "key": "selectedProductPrice",
+              "source": "text"
+            }
+          },
+          {
+            "stepId": "STEP-07",
+            "action": "click",
+            "instruction": "Click Add to cart for the captured product.",
+            "target": {
+              "description": "Add to cart button for captured product",
+              "role": "button",
+              "accessibleName": "Add to cart",
+              "visibleText": "Add to cart",
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "Product is added to cart.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-08",
+            "action": "click",
+            "instruction": "Click the Shopping Cart icon to view cart contents.",
+            "target": {
+              "description": "Shopping Cart link",
+              "role": "link",
+              "accessibleName": "Shopping Cart",
+              "visibleText": null,
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "Navigated to the shopping cart page.",
+            "capture": null
+          },
+          {
+            "stepId": "STEP-09",
+            "action": "click",
+            "instruction": "Click Remove button for the product inside the shopping cart.",
+            "target": {
+              "description": "Remove button for product in cart",
+              "role": "button",
+              "accessibleName": "Remove",
+              "visibleText": "Remove",
+              "label": null
+            },
+            "value": null,
+            "expectedObservation": "Product is removed from the cart view.",
+            "capture": null
+          }
+        ],
+        "assertions": [
+          {
+            "assertionId": "ASSERT-04",
+            "acceptanceCriterionId": "AC-04",
+            "type": "text",
+            "target": {
+              "description": "Product name in cart item",
+              "role": "link",
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "expectedValue": "{{capture.selectedProductName}}",
+            "explanation": "Verifies that the product name displayed in the cart matches the product added."
+          },
+          {
+            "assertionId": "ASSERT-05",
+            "acceptanceCriterionId": "AC-04",
+            "type": "text",
+            "target": {
+              "description": "Product quantity in cart item",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "expectedValue": "1",
+            "explanation": "Verifies that the item quantity in the cart is equal to 1."
+          },
+          {
+            "assertionId": "ASSERT-06",
+            "acceptanceCriterionId": "AC-04",
+            "type": "text",
+            "target": {
+              "description": "Product price in cart item",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "expectedValue": "{{capture.selectedProductPrice}}",
+            "explanation": "Verifies that the product price in the cart matches the captured inventory price."
+          },
+          {
+            "assertionId": "ASSERT-07",
+            "acceptanceCriterionId": "AC-05",
+            "type": "element_count",
+            "target": {
+              "description": "Cart item container rows",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "expectedValue": "0",
+            "explanation": "Verifies that clicking Remove deletes the item from the cart list."
+          },
+          {
+            "assertionId": "ASSERT-08",
+            "acceptanceCriterionId": "AC-06",
+            "type": "element_count",
+            "target": {
+              "description": "Cart item rows",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "expectedValue": "0",
+            "explanation": "Verifies that the shopping cart contains zero product items after removal."
+          },
+          {
+            "assertionId": "ASSERT-09",
+            "acceptanceCriterionId": "AC-06",
+            "type": "visibility",
+            "target": {
+              "description": "Shopping cart badge count element",
+              "role": null,
+              "accessibleName": null,
+              "visibleText": null,
+              "label": null
+            },
+            "expectedValue": "not_visible",
+            "explanation": "Verifies that the shopping cart badge is hidden/removed when the cart is empty."
+          }
+        ],
+        "expectedOutcome": "Shopping cart accurately displays product details upon navigation and updates to an empty state when the product is removed."
+      }
+    ]
+  },
+  "executionStatus": "NOT_EXECUTED"
+}

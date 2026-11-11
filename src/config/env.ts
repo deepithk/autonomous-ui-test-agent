@@ -1,11 +1,22 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
 
-// Load environment variables from the local .env file.
 dotenv.config({ quiet: true });
 
-// Tools the autonomous agent is permitted to use.
-// The MCP bridge will filter discovered tools against this list.
+/**
+ * Supported LLM providers.
+ * Add another provider here when its adapter is implemented.
+ */
+export const LLM_PROVIDERS = [
+  'gemini',
+  'anthropic'
+] as const;
+
+export type LLMProvider = typeof LLM_PROVIDERS[number];
+
+/**
+ * Tools the autonomous agent is permitted to use.
+ */
 export const ALLOWED_PLAYWRIGHT_MCP_TOOLS = [
   'browser_navigate',
   'browser_navigate_back',
@@ -27,7 +38,9 @@ export const ALLOWED_PLAYWRIGHT_MCP_TOOLS = [
   'browser_verify_value'
 ] as const;
 
-// Tools that must never be exposed to the autonomous agent.
+/**
+ * Tools that must never be exposed to the autonomous agent.
+ */
 export const BLOCKED_PLAYWRIGHT_MCP_TOOLS = [
   'browser_run_code_unsafe',
   'browser_run_code',
@@ -36,34 +49,58 @@ export const BLOCKED_PLAYWRIGHT_MCP_TOOLS = [
   'browser_route'
 ] as const;
 
-// Validate application configuration.
+/**
+ * Application environment schema.
+ */
 const envSchema = z.object({
-  ANTHROPIC_API_KEY: z.string().min(1),
-  ANTHROPIC_MODEL: z.string().default('claude-sonnet-5-5'),
+  // Common LLM configuration
+  LLM_PROVIDER: z.enum(LLM_PROVIDERS).default('gemini'),
 
+  // Model and key are optional until an LLM request is made.
+  LLM_MODEL: z.string().default(''),
+
+  LLM_API_KEY: z.string().default(''),
+
+  // GitHub integration
   GITHUB_TOKEN: z.string().min(1),
   GITHUB_OWNER: z.string().min(1),
   GITHUB_REPO: z.string().min(1),
 
-  GITHUB_ISSUE_NUMBER: z.coerce.number().int().positive(),
+  GITHUB_ISSUE_NUMBER: z.coerce
+    .number()
+    .int()
+    .positive(),
+
+  GITHUB_PROJECT_NUMBER: z.coerce
+    .number()
+    .int()
+    .positive(),
 
   GITHUB_RFQA_STATUS_VALUE: z.string().default('RFQA'),
-
-  GITHUB_PROJECT_NUMBER: z.coerce.number().int().positive(),
 
   GITHUB_RFQA_FALLBACK_LABEL: z
     .enum(['true', 'false'])
     .default('true')
     .transform(value => value === 'true'),
 
+  // Target application
   TARGET_BASE_URL: z
     .string()
     .url()
     .refine(value => {
       const protocol = new URL(value).protocol;
-      return protocol === 'http:' || protocol === 'https:';
+
+      return (
+        protocol === 'http:' ||
+        protocol === 'https:'
+      );
     }, 'TARGET_BASE_URL must use HTTP or HTTPS.'),
 
+  // SauceDemo credentials
+  SAUCEDEMO_USERNAME: z.string().min(1),
+  SAUCEDEMO_PASSWORD: z.string().min(1),
+
+  // Playwright MCP
   PLAYWRIGHT_MCP_HEADLESS: z
     .enum(['true', 'false'])
     .default('true')
@@ -71,6 +108,7 @@ const envSchema = z.object({
 
   PLAYWRIGHT_MCP_CAPS: z.string().default('testing'),
 
+  // Execution guardrails
   MAX_STEPS_PER_SCENARIO: z.coerce
     .number()
     .int()
@@ -97,15 +135,14 @@ const envSchema = z.object({
     .int()
     .min(0)
     .max(5)
-    .default(2),
-  
-  SAUCEDEMO_USERNAME: z.string().min(1),
-  SAUCEDEMO_PASSWORD: z.string().min(1)
+    .default(2)
 });
 
 export type AppConfig = z.infer<typeof envSchema>;
 
-// Validate environment variables and return typed configuration.
+/**
+ * Validate environment configuration.
+ */
 export function loadConfig(
   rawEnv: NodeJS.ProcessEnv = process.env
 ): AppConfig {
@@ -124,13 +161,15 @@ export function loadConfig(
   return result.data;
 }
 
-// Never expose API credentials in application logs.
+/**
+ * Redact sensitive configuration before logging.
+ */
 export function redactConfigForLogging(
   config: AppConfig
 ): Record<string, unknown> {
   return {
     ...config,
-    ANTHROPIC_API_KEY: '[REDACTED]',
+    LLM_API_KEY: '[REDACTED]',
     GITHUB_TOKEN: '[REDACTED]',
     SAUCEDEMO_PASSWORD: '[REDACTED]'
   };

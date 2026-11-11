@@ -21,8 +21,9 @@ import {
 describe('Phase 2 Environment and Cross-Platform Utilities', () => {
 
   const validEnv: NodeJS.ProcessEnv = {
-    ANTHROPIC_API_KEY: 'sk-ant-test-placeholder',
-    ANTHROPIC_MODEL: 'claude-sonnet-5-5',
+    LLM_PROVIDER: 'gemini',
+    LLM_MODEL: 'test-model',
+    LLM_API_KEY: 'test-llm-placeholder',
     GITHUB_TOKEN: 'ghp-test-placeholder',
     GITHUB_OWNER: 'test-owner',
     GITHUB_REPO: 'test-repo',
@@ -36,7 +37,9 @@ describe('Phase 2 Environment and Cross-Platform Utilities', () => {
   it('validates environment configuration and applies defaults', () => {
     const config = loadConfig(validEnv);
 
-    expect(config.ANTHROPIC_MODEL).toBe('claude-sonnet-5-5');
+    expect(config.LLM_PROVIDER).toBe('gemini');
+    expect(config.LLM_MODEL).toBe('test-model');
+    expect(config.LLM_API_KEY).toBe('test-llm-placeholder');
     expect(config.GITHUB_ISSUE_NUMBER).toBe(42);
     expect(config.PLAYWRIGHT_MCP_CAPS).toBe('testing');
     expect(config.MAX_STEPS_PER_SCENARIO).toBe(15);
@@ -62,8 +65,9 @@ describe('Phase 2 Environment and Cross-Platform Utilities', () => {
     const config = loadConfig(validEnv);
     const redacted = redactConfigForLogging(config);
 
-    expect(redacted.ANTHROPIC_API_KEY).toBe('[REDACTED]');
+    expect(redacted.LLM_API_KEY).toBe('[REDACTED]');
     expect(redacted.GITHUB_TOKEN).toBe('[REDACTED]');
+    expect(redacted.SAUCEDEMO_PASSWORD).toBe('[REDACTED]');
   });
 
   it('allows browser_tabs and excludes unsafe browser tools', () => {
