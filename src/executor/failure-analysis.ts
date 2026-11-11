@@ -1,3 +1,7 @@
+import { isQuotaError } from '../planner/providers/retrying-provider.js';
+
+import { shorten } from '../util/text.js';
+
 import type { ScenarioResult } from './scenario-runner.js';
 
 /**
@@ -40,9 +44,8 @@ export interface FailureFinding {
   screenshots: string[];
 }
 
-const QUOTA_PATTERN =
-  /quota|RESOURCE_EXHAUSTED|\b429\b|rate.?limit/i;
-
+// Briefly unavailable services. An empty reply is deliberately not
+// here: it is explained below as an unusable answer, not as downtime.
 const TEMPORARY_PATTERN =
   /\b(500|502|503|504|529)\b|UNAVAILABLE|overloaded|high demand|ECONNRESET|ETIMEDOUT/i;
 
@@ -66,7 +69,7 @@ export function classifyMessage(message: string): {
   category: FailureCategory;
   advice: string;
 } {
-  if (QUOTA_PATTERN.test(message)) {
+  if (isQuotaError(message)) {
     return {
       category: 'llm-provider',
       advice:
@@ -141,11 +144,8 @@ export function classifyMessage(message: string): {
   };
 }
 
-function shorten(value: string, length = 200): string {
-  const text = value.replace(/\s+/g, ' ').trim();
-
-  return text.length > length ? `${text.slice(0, length)}...` : text;
-}
+/** Messages in a finding are cut at this many characters. */
+const SUMMARY_LENGTH = 200;
 
 /**
  * Turns a scenario that did not pass into findings, each with a
@@ -191,7 +191,7 @@ export function analyzeFailures(
       scenarioId: scenario.scenarioId,
       title: scenario.title,
       category,
-      summary: `${step.stepId} failed: ${shorten(message)}`,
+      summary: `${step.stepId} failed: ${shorten(message, SUMMARY_LENGTH)}`,
       advice,
       criterionIds: scenario.acceptanceCriterionIds,
       stepId: step.stepId,
@@ -208,8 +208,9 @@ export function analyzeFailures(
         category: 'application',
         summary:
           `${assertion.assertionId} (${assertion.acceptanceCriterionId}) ` +
-          `expected "${shorten(assertion.expected)}" but the page ` +
-          `showed "${shorten(assertion.actual)}"` +
+          `expected "${shorten(assertion.expected, SUMMARY_LENGTH)}" ` +
+          `but the page showed ` +
+          `"${shorten(assertion.actual, SUMMARY_LENGTH)}"` +
           (assertion.matched && assertion.matched.length > 0
             ? ` (elements found: ${assertion.matched
                 .slice(0, 3)
@@ -249,7 +250,10 @@ export function analyzeFailures(
         category,
         summary:
           `${assertion.assertionId} (${assertion.acceptanceCriterionId}) ` +
-          `could not be checked: ${shorten(assertion.error ?? '')}`,
+          `could not be checked: ${shorten(
+            assertion.error ?? '',
+            SUMMARY_LENGTH
+          )}`,
         advice,
         criterionIds: [assertion.acceptanceCriterionId],
         stepId: assertion.afterStepId,
@@ -267,7 +271,7 @@ export function analyzeFailures(
       scenarioId: scenario.scenarioId,
       title: scenario.title,
       category,
-      summary: shorten(scenario.error),
+      summary: shorten(scenario.error, SUMMARY_LENGTH),
       advice,
       criterionIds: scenario.acceptanceCriterionIds,
       screenshots: shotsFor('failure')

@@ -10,6 +10,8 @@ import { validateTestPlan } from '../planner/test-plan-schema.js';
 
 import type { TestScenario } from '../planner/test-plan-schema.js';
 
+import { collapseWhitespace } from '../util/text.js';
+
 import { analyzeFailures } from './failure-analysis.js';
 
 import type {
@@ -278,7 +280,7 @@ function renderFailureDetails(failures: FailureFinding[]): string[] {
 }
 
 function cell(value: string): string {
-  return value.replace(/\s+/g, ' ').replace(/\|/g, '\\|').trim();
+  return collapseWhitespace(value).replace(/\|/g, '\\|');
 }
 
 /**

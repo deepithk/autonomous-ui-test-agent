@@ -3,6 +3,8 @@ import type {
   TestAssertion
 } from '../planner/test-plan-schema.js';
 
+import { collapseWhitespace, errorMessage } from '../util/text.js';
+
 import type { BrowserToolCaller } from './step-executor.js';
 
 import type { CaptureStore } from './capture-store.js';
@@ -83,10 +85,6 @@ const ABSENT_WORDS = new Set([
   'not present'
 ]);
 
-function normalize(value: string): string {
-  return value.replace(/\s+/g, ' ').trim();
-}
-
 function urlsMatch(actual: string, expected: string): boolean {
   const strip = (value: string): string => value.replace(/\/+$/, '');
 
@@ -139,7 +137,7 @@ function judge(
       }
 
       const values = found.map(entry =>
-        normalize(
+        collapseWhitespace(
           type === 'input_value'
             ? (page.elements[entry.index]?.text ?? '')
             : getElementText(page.elements, entry.index)
@@ -147,7 +145,7 @@ function judge(
       );
 
       return {
-        passed: values.includes(normalize(expected)),
+        passed: values.includes(collapseWhitespace(expected)),
         actual: values.join(' | '),
         matched
       };
@@ -199,9 +197,7 @@ export class AssertionEngine {
 
       result.status = 'error';
 
-      result.error = captures.redactAndShorten(
-        error instanceof Error ? error.message : String(error)
-      );
+      result.error = captures.redactAndShorten(errorMessage(error));
     };
 
     // Fill in placeholders. A problem here affects only that assertion.
@@ -233,7 +229,7 @@ export class AssertionEngine {
           index,
           assertion,
           expected,
-          target: this.renderTarget(assertion.target)
+          target: captures.renderTarget(assertion.target)
         });
       } catch (error) {
         fail(index, error);
@@ -305,21 +301,6 @@ export class AssertionEngine {
     }
 
     return results;
-  }
-
-  private renderTarget(target: SemanticTarget): SemanticTarget {
-    const { captures } = this.options;
-
-    const render = (value: string | null): string | null =>
-      value === null ? null : captures.render(value);
-
-    return {
-      description: captures.render(target.description),
-      role: render(target.role),
-      accessibleName: render(target.accessibleName),
-      visibleText: render(target.visibleText),
-      label: render(target.label)
-    };
   }
 
   private async readPage(): Promise<PageState> {

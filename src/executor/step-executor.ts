@@ -1,11 +1,10 @@
-import type {
-  ExecutionStep,
-  SemanticTarget
-} from '../planner/test-plan-schema.js';
+import type { ExecutionStep } from '../planner/test-plan-schema.js';
 
 import type { McpContentBlock } from './browser-session.js';
 
 import type { CaptureStore } from './capture-store.js';
+
+import { errorMessage } from '../util/text.js';
 
 import { SemanticResolverError } from './semantic-resolver.js';
 
@@ -113,7 +112,7 @@ export class StepExecutor {
       result.status = 'failed';
 
       result.error = this.options.captures.redactAndShorten(
-        error instanceof Error ? error.message : String(error)
+        errorMessage(error)
       );
     }
 
@@ -242,10 +241,7 @@ export class StepExecutor {
     try {
       await this.options.browser.callTool('browser_navigate', { url });
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : String(error);
-
-      if (!NETWORK_ERROR_PATTERN.test(message)) {
+      if (!NETWORK_ERROR_PATTERN.test(errorMessage(error))) {
         throw error;
       }
 
@@ -287,21 +283,6 @@ export class StepExecutor {
     }
   }
 
-  private renderTarget(target: SemanticTarget): SemanticTarget {
-    const { captures } = this.options;
-
-    const render = (value: string | null): string | null =>
-      value === null ? null : captures.render(value);
-
-    return {
-      description: captures.render(target.description),
-      role: render(target.role),
-      accessibleName: render(target.accessibleName),
-      visibleText: render(target.visibleText),
-      label: render(target.label)
-    };
-  }
-
   /**
    * Takes a fresh snapshot and resolves the step target.
    * Retries with a new snapshot when the element is not found yet.
@@ -312,7 +293,7 @@ export class StepExecutor {
   ): Promise<ResolvedStepTarget> {
     const { browser, resolver, recoveryAttempts } = this.options;
 
-    const target = this.renderTarget(step.target);
+    const target = this.options.captures.renderTarget(step.target);
 
     let lastError: unknown;
 

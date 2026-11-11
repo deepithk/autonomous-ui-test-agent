@@ -1,18 +1,9 @@
+import { collapseWhitespace as oneLine, shorten } from '../util/text.js';
+
 import type { ExecutionEvent } from './scenario-runner.js';
 
-/**
- * One log entry must stay on one line, so line breaks and runs of
- * spaces inside values are collapsed.
- */
-function oneLine(value: string): string {
-  return value.replace(/\s+/g, ' ').trim();
-}
-
-function shorten(value: string, length: number): string {
-  const text = oneLine(value);
-
-  return text.length > length ? `${text.slice(0, length)}...` : text;
-}
+// One log entry must stay on one line, so line breaks and runs of
+// spaces inside values are collapsed (oneLine).
 
 function quote(value: string): string {
   return `"${oneLine(value)}"`;

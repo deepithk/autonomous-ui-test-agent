@@ -57,6 +57,40 @@ describe('CaptureStore', () => {
     expect(second.has('price')).toBe(false);
   });
 
+  it('renders every field of a plan target and keeps empty ones empty', () => {
+    const store = new CaptureStore({ SAUCEDEMO_USERNAME: 'standard_user' });
+
+    store.set('selectedProductName', 'Sauce Labs Backpack');
+
+    expect(
+      store.renderTarget({
+        description: 'Add to cart for {{capture.selectedProductName}}',
+        role: null,
+        accessibleName: 'Cart of {{SAUCEDEMO_USERNAME}}',
+        visibleText: 'Add to cart',
+        label: null
+      })
+    ).toEqual({
+      description: 'Add to cart for Sauce Labs Backpack',
+      role: null,
+      accessibleName: 'Cart of standard_user',
+      visibleText: 'Add to cart',
+      label: null
+    });
+  });
+
+  it('refuses to render a target that uses a missing capture', () => {
+    expect(() =>
+      new CaptureStore().renderTarget({
+        description: '{{capture.unknown}}',
+        role: null,
+        accessibleName: null,
+        visibleText: null,
+        label: null
+      })
+    ).toThrow(CaptureStoreError);
+  });
+
   it('shortens long text after redacting', () => {
     const store = new CaptureStore({ PASSWORD: 'secret_sauce' });
 

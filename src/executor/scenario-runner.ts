@@ -3,6 +3,8 @@ import type {
   TestScenario
 } from '../planner/test-plan-schema.js';
 
+import { errorMessage } from '../util/text.js';
+
 import { AssertionEngine } from './assertion-engine.js';
 
 import type { AssertionResult } from './assertion-engine.js';
@@ -392,7 +394,7 @@ export class ScenarioRunner {
       }
     } catch (error) {
       failureReason = new CaptureStore(secrets).redactAndShorten(
-        error instanceof Error ? error.message : String(error)
+        errorMessage(error)
       );
 
       result.skippedStepIds = scenario.steps

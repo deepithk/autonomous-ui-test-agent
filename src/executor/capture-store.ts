@@ -1,3 +1,5 @@
+import type { SemanticTarget } from '../planner/test-plan-schema.js';
+
 export class CaptureStoreError extends Error {
   constructor(message: string) {
     super(message);
@@ -75,6 +77,22 @@ export class CaptureStore {
         return value;
       }
     );
+  }
+
+  /**
+   * Renders every text field of a plan target.
+   */
+  renderTarget(target: SemanticTarget): SemanticTarget {
+    const render = (value: string | null): string | null =>
+      value === null ? null : this.render(value);
+
+    return {
+      description: this.render(target.description),
+      role: render(target.role),
+      accessibleName: render(target.accessibleName),
+      visibleText: render(target.visibleText),
+      label: render(target.label)
+    };
   }
 
   /**

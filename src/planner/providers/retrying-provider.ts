@@ -1,5 +1,7 @@
 import type { LLMProvider } from '../../config/env.js';
 
+import { errorMessage } from '../../util/text.js';
+
 import type {
   ILLMProvider,
   LLMGenerationRequest,
@@ -14,6 +16,15 @@ const QUOTA_PATTERN =
   /RESOURCE_EXHAUSTED|\b429\b|quota|rate.?limit/i;
 
 /**
+ * True when a provider error means a quota or rate limit was reached.
+ * Shared with the failure explanations, so that what is retried and
+ * what is reported as a quota problem always agree.
+ */
+export function isQuotaError(message: string): boolean {
+  return QUOTA_PATTERN.test(message);
+}
+
+/**
  * Temporary provider trouble that usually clears within seconds.
  */
 const TRANSIENT_PATTERN =
@@ -24,10 +35,9 @@ const TRANSIENT_PATTERN =
  * based on that text.
  */
 export function isTransientProviderError(error: unknown): boolean {
-  const message =
-    error instanceof Error ? error.message : String(error);
+  const message = errorMessage(error);
 
-  if (QUOTA_PATTERN.test(message)) {
+  if (isQuotaError(message)) {
     return false;
   }
 
