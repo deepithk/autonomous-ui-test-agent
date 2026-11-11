@@ -1,0 +1,189 @@
+import { describe, expect, it, vi } from 'vitest';
+
+import {
+  SemanticResolver,
+  SemanticResolverError
+} from '../../src/executor/semantic-resolver.js';
+
+import { parseSnapshot } from '../../src/executor/snapshot.js';
+
+import type {
+  ILLMProvider
+} from '../../src/planner/providers/llm-provider.js';
+
+import type {
+  SemanticTarget
+} from '../../src/planner/test-plan-schema.js';
+
+import { INVENTORY_YAML } from './fixtures/inventory-snapshot.js';
+
+const elements = parseSnapshot(INVENTORY_YAML);
+
+function target(
+  overrides: Partial<SemanticTarget> = {}
+): SemanticTarget {
+  return {
+    description: 'Some element',
+    role: null,
+    accessibleName: null,
+    visibleText: null,
+    label: null,
+    ...overrides
+  };
+}
+
+function createLlm(text: string) {
+  const generateStructured = vi.fn().mockResolvedValue({
+    text,
+    model: 'test'
+  });
+
+  const llm: ILLMProvider = {
+    providerName: 'gemini',
+    generateStructured
+  };
+
+  return { llm, generateStructured };
+}
+
+describe('SemanticResolver', () => {
+  it('resolves a unique match without calling the LLM', async () => {
+    const { llm, generateStructured } = createLlm('{}');
+
+    const resolved = await new SemanticResolver(llm).resolve(
+      target({ role: 'combobox', accessibleName: 'Sort products' }),
+      'select_option',
+      elements,
+      INVENTORY_YAML
+    );
+
+    expect(resolved).toMatchObject({
+      ref: 'e38',
+      method: 'deterministic',
+      element: 'combobox "Sort products"'
+    });
+
+    expect(generateStructured).not.toHaveBeenCalled();
+  });
+
+  it('uses the action to pick between a form and a button with the same name', async () => {
+    const yaml = [
+      '- form "Login" [ref=e9]:',
+      '  - textbox "Username" [ref=e11]',
+      '  - button "Login" [ref=e15] [cursor=pointer]'
+    ].join('\n');
+
+    const { llm, generateStructured } = createLlm('{}');
+
+    const resolved = await new SemanticResolver(llm).resolve(
+      target({ visibleText: 'Login' }),
+      'click',
+      parseSnapshot(yaml),
+      yaml
+    );
+
+    expect(resolved).toMatchObject({
+      ref: 'e15',
+      method: 'deterministic'
+    });
+
+    expect(generateStructured).not.toHaveBeenCalled();
+  });
+
+  it('asks the LLM when several elements match', async () => {
+    const { llm, generateStructured } = createLlm(
+      JSON.stringify({
+        ref: 'e66',
+        reason: 'Belongs to Sauce Labs Bike Light.'
+      })
+    );
+
+    const resolved = await new SemanticResolver(llm).resolve(
+      target({
+        description: 'Add to cart button for Sauce Labs Bike Light',
+        visibleText: 'Add to cart'
+      }),
+      'click',
+      elements,
+      INVENTORY_YAML
+    );
+
+    expect(resolved).toMatchObject({ ref: 'e66', method: 'llm' });
+
+    expect(generateStructured).toHaveBeenCalledTimes(1);
+
+    const request = generateStructured.mock.calls[0]?.[0];
+
+    expect(request.prompt).toContain('Sauce Labs Bike Light');
+    expect(request.prompt).toContain(INVENTORY_YAML);
+  });
+
+  it('asks the LLM when the plan gave no semantic fields', async () => {
+    const { llm } = createLlm(
+      JSON.stringify({ ref: 'e124', reason: 'Cart button.' })
+    );
+
+    const resolved = await new SemanticResolver(llm).resolve(
+      target({ description: 'Shopping cart icon' }),
+      'click',
+      elements,
+      INVENTORY_YAML
+    );
+
+    expect(resolved.ref).toBe('e124');
+  });
+
+  it('rejects a ref that is not in the snapshot', async () => {
+    const { llm } = createLlm(
+      JSON.stringify({ ref: 'e999', reason: 'Guess.' })
+    );
+
+    await expect(
+      new SemanticResolver(llm).resolve(
+        target(),
+        'click',
+        elements,
+        INVENTORY_YAML
+      )
+    ).rejects.toThrow(/not in the snapshot/);
+  });
+
+  it('fails when the LLM finds no match', async () => {
+    const { llm } = createLlm(
+      JSON.stringify({ ref: '', reason: 'Nothing like it.' })
+    );
+
+    await expect(
+      new SemanticResolver(llm).resolve(
+        target({ description: 'Checkout button' }),
+        'click',
+        elements,
+        INVENTORY_YAML
+      )
+    ).rejects.toThrow(/Nothing like it/);
+  });
+
+  it('fails on invalid LLM JSON', async () => {
+    const { llm } = createLlm('not json');
+
+    await expect(
+      new SemanticResolver(llm).resolve(
+        target(),
+        'click',
+        elements,
+        INVENTORY_YAML
+      )
+    ).rejects.toBeInstanceOf(SemanticResolverError);
+  });
+
+  it('fails without an LLM when a match is not unique', async () => {
+    await expect(
+      new SemanticResolver(null).resolve(
+        target({ visibleText: 'Add to cart' }),
+        'click',
+        elements,
+        INVENTORY_YAML
+      )
+    ).rejects.toThrow(/2 elements matched/);
+  });
+});
