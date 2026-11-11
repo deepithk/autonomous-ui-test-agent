@@ -338,6 +338,81 @@ describe('ScenarioRunner', () => {
     expect(result.screenshots).toEqual([]);
   });
 
+  it('emits events in the order things happen', async () => {
+    const { browser } = createBrowser();
+
+    const events: string[] = [];
+
+    const { runner } = createRunner(browser, {
+      onEvent: event =>
+        events.push(
+          event.type === 'step_finished'
+            ? `step:${event.result.stepId}`
+            : event.type === 'assertion_finished'
+              ? `assert:${event.result.assertionId}`
+              : event.type
+        )
+    });
+
+    await runner.run(
+      scenario([step(1)], [urlAssertion(1, 'STEP-01', '/')])
+    );
+
+    expect(events).toEqual([
+      'scenario_started',
+      'step:STEP-01',
+      'assert:ASSERT-01',
+      'screenshot_saved',
+      'scenario_finished'
+    ]);
+  });
+
+  it('emits not-evaluated assertions when a step fails', async () => {
+    const { browser } = createBrowser();
+
+    const events: string[] = [];
+
+    const { runner } = createRunner(browser, {
+      onEvent: event =>
+        events.push(
+          event.type === 'assertion_finished'
+            ? `assert:${event.result.status}`
+            : event.type
+        )
+    });
+
+    await runner.run(
+      scenario(
+        [step(1, { value: 'https://evil.example/' })],
+        [urlAssertion(1, 'STEP-01', '/')]
+      )
+    );
+
+    expect(events).toEqual([
+      'scenario_started',
+      'step_finished',
+      'screenshot_saved',
+      'assert:error',
+      'scenario_finished'
+    ]);
+  });
+
+  it('is not affected by a listener that throws', async () => {
+    const { browser } = createBrowser();
+
+    const { runner } = createRunner(browser, {
+      onEvent: () => {
+        throw new Error('disk full');
+      }
+    });
+
+    const result = await runner.run(
+      scenario([step(1)], [urlAssertion(1, 'STEP-01', '/')])
+    );
+
+    expect(result.status).toBe('passed');
+  });
+
   it('reports assertions in plan order', async () => {
     const { browser } = createBrowser();
 

@@ -154,6 +154,7 @@ function setup(
   const run = () =>
     runExecutionWorkflow({
       executionLlm: { provider: 'gemini', model: 'exec-model' },
+      executionLogPath: 'logs/run.log',
       loadPlanReport: async () => ({
         report: planReport,
         path: 'reports/plan.json'
@@ -187,6 +188,7 @@ describe('runExecutionWorkflow', () => {
     expect(report.planReportPath).toBe('reports/plan.json');
     expect(report.planningLlm.model).toBe('test-model');
     expect(report.executionLlm.model).toBe('exec-model');
+    expect(report.executionLogPath).toBe('logs/run.log');
     expect(report.summary).toEqual({
       scenarios: { passed: 2, failed: 0, error: 0 },
       steps: { passed: 2, failed: 0, skipped: 0 },
@@ -264,6 +266,7 @@ describe('renderMarkdownReport', () => {
     expect(markdown).toContain('# Test execution report: FAILED');
     expect(markdown).toContain('Plan written by: gemini / test-model');
     expect(markdown).toContain('Executed with: gemini / exec-model');
+    expect(markdown).toContain('Execution log: logs/run.log');
     expect(markdown).toContain('| AC-02 Cart \\| badge | FAILED | 0/1 |');
     expect(markdown).toContain('| ASSERT-01 | AC-02 | failed | a \\| b | a \\| c |');
     expect(markdown).toContain('## SC-002: Scenario SC-002 (failed)');

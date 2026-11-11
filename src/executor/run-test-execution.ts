@@ -1,3 +1,5 @@
+import { appendFileSync } from 'node:fs';
+
 import {
   mkdir,
   readdir,
@@ -23,6 +25,8 @@ import type {
 import { BrowserSession } from './browser-session.js';
 
 import { CaptureStore } from './capture-store.js';
+
+import { formatLogEvent } from './execution-log.js';
 
 import {
   renderMarkdownReport,
@@ -92,7 +96,28 @@ async function main(): Promise<void> {
 
   const screenshotDir = path.join(evidence.screenshotsDir, timestamp);
 
+  // One log file per run. Every line is redacted before it is written,
+  // and a logging problem never stops the run.
+  const logPath = path.join(
+    evidence.logsDir,
+    `test-execution-${timestamp}.log`
+  );
+
+  const writeLog = (line: string): void => {
+    try {
+      appendFileSync(
+        logPath,
+        `${redactor.redactAndShorten(line, 2000)}\n`,
+        'utf8'
+      );
+    } catch {
+      // Ignored on purpose.
+    }
+  };
+
   const runner = new ScenarioRunner({
+    onEvent: event => writeLog(formatLogEvent(event)),
+
     openBrowser: () =>
       BrowserSession.open({
         headless: config.PLAYWRIGHT_MCP_HEADLESS,
@@ -130,7 +155,14 @@ async function main(): Promise<void> {
 
   console.info(`[INFO] Test plan: ${planFile}\n`);
 
+  writeLog(
+    `${new Date().toISOString()} RUN START plan=${path.basename(planFile)} ` +
+    `llm=${provider.providerName}/${config.LLM_MODEL}`
+  );
+
   const { report, reportPath } = await runExecutionWorkflow({
+    executionLogPath: path.relative(evidence.rootDir, logPath),
+
     executionLlm: {
       provider: provider.providerName,
       model: config.LLM_MODEL
@@ -179,6 +211,19 @@ async function main(): Promise<void> {
     }
   });
 
+  for (const criterion of report.criteria) {
+    writeLog(
+      `${new Date().toISOString()} [${criterion.id}] CRITERION ` +
+      `${criterion.verdict} ${criterion.assertionsPassed}/` +
+      `${criterion.assertionsTotal}`
+    );
+  }
+
+  writeLog(
+    `${new Date().toISOString()} RUN END ${report.verdict} ` +
+    `report=${path.basename(reportPath)}`
+  );
+
   console.info('\n========================================');
   console.info(` EXECUTION ${report.verdict}`);
   console.info('========================================');
@@ -192,6 +237,7 @@ async function main(): Promise<void> {
   }
 
   console.info(`\nReport: ${reportPath}`);
+  console.info(`Log   : ${logPath}`);
   console.info('========================================\n');
 
   if (report.verdict !== 'PASSED') {

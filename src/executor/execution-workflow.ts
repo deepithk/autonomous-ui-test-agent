@@ -26,6 +26,9 @@ export interface ExecutionRunReport {
   generatedAt: string;
   planReportPath: string;
 
+  /** Step-by-step log of the run, relative to the evidence folder. */
+  executionLogPath?: string;
+
   source: PlanningRunReport['source'];
 
   /** The model that wrote the test plan. */
@@ -48,6 +51,9 @@ export interface ExecutionRunReport {
 }
 
 export interface ExecutionWorkflowDependencies {
+  /** Where the run's log is written, for the report. */
+  executionLogPath?: string;
+
   /** Provider and model used while executing, for the report. */
   executionLlm: PlanningRunReport['llm'];
 
@@ -161,6 +167,9 @@ export async function runExecutionWorkflow(
   const report: ExecutionRunReport = {
     generatedAt: new Date().toISOString(),
     planReportPath,
+    ...(dependencies.executionLogPath !== undefined
+      ? { executionLogPath: dependencies.executionLogPath }
+      : {}),
     source: plan.source,
     planningLlm: plan.llm,
     executionLlm: dependencies.executionLlm,
@@ -215,6 +224,9 @@ export function renderMarkdownReport(
     `- Generated: ${report.generatedAt}`,
     `- Plan written by: ${report.planningLlm.provider} / ${report.planningLlm.model}`,
     `- Executed with: ${report.executionLlm.provider} / ${report.executionLlm.model}`,
+    ...(report.executionLogPath
+      ? [`- Execution log: ${report.executionLogPath}`]
+      : []),
     '',
     '## Acceptance criteria',
     '',

@@ -28,9 +28,52 @@ export interface ScenarioBrowser extends BrowserToolCaller {
   close(): Promise<void>;
 }
 
+/**
+ * Things that happen while a scenario runs, in the order they happen.
+ * Used to write the execution log.
+ */
+export type ExecutionEvent =
+  | {
+      type: 'scenario_started';
+      scenarioId: string;
+      title: string;
+    }
+  | {
+      type: 'step_finished';
+      scenarioId: string;
+      action: string;
+      targetDescription: string;
+      result: StepResult;
+    }
+  | {
+      type: 'assertion_finished';
+      scenarioId: string;
+      result: AssertionResult;
+    }
+  | {
+      type: 'screenshot_saved';
+      scenarioId: string;
+      stepId: string;
+      reason: 'checkpoint' | 'failure';
+      path: string;
+    }
+  | {
+      type: 'scenario_finished';
+      scenarioId: string;
+      status: 'passed' | 'failed' | 'error';
+      durationMs: number;
+      error?: string;
+    };
+
 export interface ScenarioRunnerOptions {
   /** Opens a fresh, isolated browser for one scenario. */
   openBrowser: () => Promise<ScenarioBrowser>;
+
+  /**
+   * Receives events as the scenario runs. A listener that throws
+   * never affects the test result.
+   */
+  onEvent?: (event: ExecutionEvent) => void;
 
   resolver: SemanticResolver;
 
@@ -146,6 +189,12 @@ export class ScenarioRunner {
       durationMs: 0
     };
 
+    this.emit({
+      type: 'scenario_started',
+      scenarioId: scenario.scenarioId,
+      title: scenario.title
+    });
+
     if (scenario.steps.length > maxSteps) {
       result.status = 'error';
 
@@ -159,7 +208,17 @@ export class ScenarioRunner {
         this.notEvaluated(assertion, 'the scenario was not run')
       );
 
+      for (const assertion of result.assertions) {
+        this.emit({
+          type: 'assertion_finished',
+          scenarioId: scenario.scenarioId,
+          result: assertion
+        });
+      }
+
       result.durationMs = Date.now() - startedAt;
+
+      this.emitFinished(result);
 
       return result;
     }
@@ -202,6 +261,14 @@ export class ScenarioRunner {
 
         result.steps.push(stepResult);
 
+        this.emit({
+          type: 'step_finished',
+          scenarioId: scenario.scenarioId,
+          action: step.action,
+          targetDescription: step.target.description,
+          result: stepResult
+        });
+
         if (stepResult.status === 'failed') {
           failureReason = `${step.stepId} failed: ${stepResult.error ?? 'unknown error'}`;
 
@@ -225,14 +292,19 @@ export class ScenarioRunner {
         );
 
         for (const assertion of checkpoint) {
-          evaluated.set(
-            assertion.assertionId,
-            await withDeadline(
-              assertionEngine.evaluate(assertion),
-              remaining(),
-              scenarioTimeoutMs
-            )
+          const assertionResult = await withDeadline(
+            assertionEngine.evaluate(assertion),
+            remaining(),
+            scenarioTimeoutMs
           );
+
+          evaluated.set(assertion.assertionId, assertionResult);
+
+          this.emit({
+            type: 'assertion_finished',
+            scenarioId: scenario.scenarioId,
+            result: assertionResult
+          });
         }
 
         if (checkpoint.length > 0) {
@@ -262,14 +334,26 @@ export class ScenarioRunner {
     }
 
     // Report assertions in plan order, including any that never ran.
-    result.assertions = scenario.assertions.map(
-      assertion =>
-        evaluated.get(assertion.assertionId) ??
-        this.notEvaluated(
-          assertion,
-          failureReason ?? 'an earlier step did not complete'
-        )
-    );
+    result.assertions = scenario.assertions.map(assertion => {
+      const done = evaluated.get(assertion.assertionId);
+
+      if (done) {
+        return done;
+      }
+
+      const skipped = this.notEvaluated(
+        assertion,
+        failureReason ?? 'an earlier step did not complete'
+      );
+
+      this.emit({
+        type: 'assertion_finished',
+        scenarioId: scenario.scenarioId,
+        result: skipped
+      });
+
+      return skipped;
+    });
 
     const stepFailed = result.steps.some(
       step => step.status === 'failed'
@@ -294,7 +378,31 @@ export class ScenarioRunner {
 
     result.durationMs = Date.now() - startedAt;
 
+    this.emitFinished(result);
+
     return result;
+  }
+
+  /**
+   * Sends an event to the listener. Logging problems never change
+   * the test result.
+   */
+  private emit(event: ExecutionEvent): void {
+    try {
+      this.options.onEvent?.(event);
+    } catch {
+      // Ignored on purpose.
+    }
+  }
+
+  private emitFinished(result: ScenarioResult): void {
+    this.emit({
+      type: 'scenario_finished',
+      scenarioId: result.scenarioId,
+      status: result.status,
+      durationMs: result.durationMs,
+      ...(result.error !== undefined ? { error: result.error } : {})
+    });
   }
 
   private notEvaluated(
@@ -349,6 +457,14 @@ export class ScenarioRunner {
       );
 
       result.screenshots.push({ stepId, reason, path });
+
+      this.emit({
+        type: 'screenshot_saved',
+        scenarioId,
+        stepId,
+        reason,
+        path
+      });
     } catch {
       // Evidence is best effort.
     }
