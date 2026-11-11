@@ -65,6 +65,25 @@ describe('Phase 2 Environment and Cross-Platform Utilities', () => {
     expect('GITHUB_TOKEN' in config).toBe(false);
   });
 
+  it('turns self-healing on by default and can switch it off', () => {
+    const base = {
+      LLM_PROVIDER: 'gemini',
+      TARGET_BASE_URL: 'https://example.com',
+      SAUCEDEMO_USERNAME: 'user',
+      SAUCEDEMO_PASSWORD: 'password'
+    };
+
+    expect(loadLocalConfig(base).SELF_HEALING).toBe(true);
+
+    expect(
+      loadLocalConfig({ ...base, SELF_HEALING: 'false' }).SELF_HEALING
+    ).toBe(false);
+
+    expect(() =>
+      loadLocalConfig({ ...base, SELF_HEALING: 'maybe' })
+    ).toThrow(/SELF_HEALING/);
+  });
+
   it('still requires the target app and login for the local configuration', () => {
     expect(() => loadLocalConfig({ LLM_PROVIDER: 'gemini' })).toThrow(
       /TARGET_BASE_URL[\s\S]*SAUCEDEMO_USERNAME/

@@ -165,6 +165,7 @@ async function main(): Promise<void> {
     secrets,
     allowedOrigin: config.TARGET_BASE_URL,
     recoveryAttempts: config.MAX_ELEMENT_RECOVERY_ATTEMPTS,
+    selfHeal: config.SELF_HEALING,
     maxSteps: config.MAX_STEPS_PER_SCENARIO,
     scenarioTimeoutMs: config.SCENARIO_TIMEOUT_MS,
 
@@ -268,6 +269,12 @@ async function main(): Promise<void> {
     `\nLLM requests while executing: ${usage.requests} ` +
     `(${usage.reused} answers reused)`
   );
+
+  if (report.healing.length > 0) {
+    console.info(
+      `Self-healed steps: ${report.healing.length} (see the report)`
+    );
+  }
 
   console.info(`Report: ${reportPath}`);
   console.info(`Log   : ${logPath}`);

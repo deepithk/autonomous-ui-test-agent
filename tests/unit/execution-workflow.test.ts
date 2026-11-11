@@ -101,7 +101,8 @@ function makePlanReport(
 function makeResult(
   scenario: TestScenario,
   status: ScenarioResult['status'],
-  assertionStatus: 'passed' | 'failed' | 'error' = 'passed'
+  assertionStatus: 'passed' | 'failed' | 'error' = 'passed',
+  healed = false
 ): ScenarioResult {
   return {
     scenarioId: scenario.scenarioId,
@@ -109,7 +110,20 @@ function makeResult(
     acceptanceCriterionIds: scenario.acceptanceCriterionIds,
     status,
     steps: [
-      { stepId: 'STEP-01', status: 'passed', durationMs: 5 }
+      {
+        stepId: 'STEP-01',
+        status: 'passed',
+        durationMs: 5,
+        ...(healed
+          ? {
+              healed: {
+                problem: 'No element matched "Checkout"',
+                repair: 'used button "Proceed | pay" instead',
+                reason: 'Renamed.'
+              }
+            }
+          : {})
+      }
     ],
     skippedStepIds: status === 'error' ? ['STEP-02'] : [],
     assertions: scenario.assertions.map(assertion => ({
@@ -132,6 +146,7 @@ function setup(
   statuses: Array<{
     status: ScenarioResult['status'];
     assertion?: 'passed' | 'failed' | 'error';
+    healed?: boolean;
   }>,
   planReport: PlanningRunReport = makePlanReport()
 ) {
@@ -146,7 +161,12 @@ function setup(
     .mockImplementation(async (scenario: TestScenario) => {
       const outcome = statuses[index++] as (typeof statuses)[number];
 
-      return makeResult(scenario, outcome.status, outcome.assertion);
+      return makeResult(
+        scenario,
+        outcome.status,
+        outcome.assertion,
+        outcome.healed
+      );
     });
 
   const onScenarioDone = vi.fn();
@@ -192,9 +212,50 @@ describe('runExecutionWorkflow', () => {
     expect(report.executionLogPath).toBe('logs/run.log');
     expect(report.summary).toEqual({
       scenarios: { passed: 2, failed: 0, error: 0 },
-      steps: { passed: 2, failed: 0, skipped: 0 },
+      steps: { passed: 2, failed: 0, skipped: 0, healed: 0 },
       assertions: { passed: 2, failed: 0, error: 0 }
     });
+  });
+
+  it('lists steps that were repaired by self-healing', async () => {
+    const { run } = setup([
+      { status: 'passed', healed: true },
+      { status: 'passed' }
+    ]);
+
+    const { report } = await run();
+
+    expect(report.verdict).toBe('PASSED');
+    expect(report.summary.steps.healed).toBe(1);
+
+    expect(report.healing).toEqual([
+      {
+        scenarioId: 'SC-001',
+        stepId: 'STEP-01',
+        outcome: 'passed',
+        problem: 'No element matched "Checkout"',
+        repair: 'used button "Proceed | pay" instead',
+        reason: 'Renamed.'
+      }
+    ]);
+
+    const markdown = renderMarkdownReport(report);
+
+    expect(markdown).toContain('## Self-healing');
+    expect(markdown).toContain('A repair never decides a result');
+    expect(markdown).toContain(
+      '| SC-001 STEP-01 | passed | No element matched "Checkout" | ' +
+      'used button "Proceed \\| pay" instead | Renamed. |'
+    );
+  });
+
+  it('has no self-healing section when nothing was repaired', async () => {
+    const { run } = setup([{ status: 'passed' }, { status: 'passed' }]);
+
+    const { report } = await run();
+
+    expect(report.healing).toEqual([]);
+    expect(renderMarkdownReport(report)).not.toContain('Self-healing');
   });
 
   it('gives each acceptance criterion its own verdict', async () => {

@@ -48,6 +48,8 @@ changes, the next plan changes with it.
 - Autonomous browser interaction using Playwright MCP.
 - Dynamic UI element identification.
 - Independent assertions checked against the live page.
+- Self-healing: one repair attempt for a step whose element is missing or
+  whose action the browser refused (section 9.3).
 - Screenshot evidence at every assertion checkpoint.
 - A step-by-step execution log for each run.
 - JSON and Markdown reports with passed / failed / error results and a
@@ -361,6 +363,7 @@ until". Every retry is bounded:
   errors are not retried.
 - The first failed step stops its scenario.
 - A scenario has a maximum number of steps and a time limit (9.2).
+- Self-healing makes one repair attempt per step and never more (9.3).
 
 ### 9.2 Execution guardrails
 
@@ -386,6 +389,46 @@ These browser tools are blocked and can never be called:
 - browser_evaluate
 - browser_file_upload
 - browser_route
+
+### 9.3 Self-healing (one repair per step)
+
+A page can change a little between the day a plan was written and the day it
+runs: a button is renamed, an element is covered for a moment, a reference
+goes stale. The application still works, but a step fails. Before failing a
+step, the agent makes **one** repair attempt, in two situations:
+
+1. **The planned element is not found.** After the normal look-ups fail, the
+   LLM is given the failed target, what the step was meant to do, what the
+   problem was, and the current page. It may name a different element only if
+   that element serves the same purpose. The prompt tells it to refuse if the
+   page is in a different state than the step assumes (an error message is
+   showing, the user is not logged in, the needed page is not open) or if
+   nothing serves the same purpose.
+2. **The browser refuses the action** (the element went stale or was covered).
+   The page is read again, the element is looked up again with a fresh LLM
+   answer instead of a remembered one, and the action is tried once more.
+
+Guards that keep self-healing from hiding real problems:
+
+- It applies to steps only. Assertions are never healed, so what the page
+  must show is always checked as written.
+- At most one repair per step. If it fails, the step fails and the report
+  gives both the original problem and why healing did not help.
+- It is never used for provider failures such as quota or "high demand"
+  errors. Those are not a page problem, and retrying would only spend
+  requests.
+- The replacement element must exist in the page snapshot that was sent.
+- A repair is never silent. The log line carries a `SELF-HEAL` note with the
+  problem, the repair and the LLM's reason, the report has a **Self-healing**
+  table, and the console prints the count. A repair is shown even if the step
+  failed afterwards.
+- Secrets are redacted from what is recorded.
+- It can be switched off with `SELF_HEALING=false`. It costs one extra LLM
+  request only when a step is actually repaired.
+
+The element resolver already matches by meaning, so many renamed elements are
+found on the first look-up and need no repair. Self-healing is the safety net
+for what that leaves.
 
 ## 10. Security Considerations
 

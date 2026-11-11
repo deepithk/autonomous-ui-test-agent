@@ -100,6 +100,10 @@ export interface ScenarioRunnerOptions {
 
   allowedOrigin: string;
   recoveryAttempts: number;
+
+  /** Repair a step once before failing it (see StepExecutorOptions). */
+  selfHeal?: boolean;
+
   maxSteps: number;
   scenarioTimeoutMs: number;
 
@@ -213,6 +217,7 @@ export class ScenarioRunner {
       maxSteps,
       scenarioTimeoutMs,
       recoveryAttempts,
+      selfHeal,
       resolver,
       secrets,
       allowedOrigin
@@ -266,7 +271,8 @@ export class ScenarioRunner {
         resolver,
         captures,
         allowedOrigin,
-        recoveryAttempts
+        recoveryAttempts,
+        ...(selfHeal !== undefined ? { selfHeal } : {})
       });
 
       const assertionEngine = new AssertionEngine({

@@ -1,4 +1,9 @@
-import type { ExecutionStep } from '../planner/test-plan-schema.js';
+import type {
+  ExecutionStep,
+  SemanticTarget
+} from '../planner/test-plan-schema.js';
+
+import { BrowserSessionError } from './browser-session.js';
 
 import type { McpContentBlock } from './browser-session.js';
 
@@ -44,6 +49,12 @@ export interface StepExecutorOptions {
 
   /** Wait before the one retry of a navigation that hit a network error. */
   networkRetryDelayMs?: number;
+
+  /**
+   * Try to repair a step once before failing it: when its element is not
+   * found, or when the browser refuses the action. Off unless set.
+   */
+  selfHeal?: boolean;
 }
 
 const NETWORK_ERROR_PATTERN =
@@ -69,6 +80,18 @@ export interface StepResult {
   captured?: {
     key: string;
     value: string;
+  };
+
+  /** Set when the step first hit a problem and was repaired. */
+  healed?: {
+    /** What went wrong the first time. */
+    problem: string;
+
+    /** What the agent did about it. */
+    repair: string;
+
+    /** The LLM's stated reason for the replacement element. */
+    reason: string;
   };
 }
 
@@ -155,12 +178,11 @@ export class StepExecutor {
       }
 
       case 'observe': {
-        const { resolved, elements } = await this.resolveTarget(
-          step,
-          result
-        );
+        await this.withElement(step, result, async (resolved, elements) => {
+          if (!step.capture) {
+            return;
+          }
 
-        if (step.capture) {
           const value =
             step.capture.source === 'input_value'
               ? (elements[resolved.index]?.text ?? '')
@@ -176,17 +198,17 @@ export class StepExecutor {
           captures.set(step.capture.key, value);
 
           result.captured = { key: step.capture.key, value };
-        }
+        });
 
         return;
       }
 
       case 'click': {
-        const { resolved } = await this.resolveTarget(step, result);
-
-        await browser.callTool('browser_click', {
-          element: resolved.element,
-          target: resolved.ref
+        await this.withElement(step, result, async resolved => {
+          await browser.callTool('browser_click', {
+            element: resolved.element,
+            target: resolved.ref
+          });
         });
 
         return;
@@ -196,13 +218,13 @@ export class StepExecutor {
       case 'type': {
         const text = this.requireValue(step);
 
-        const { resolved } = await this.resolveTarget(step, result);
-
-        await browser.callTool('browser_type', {
-          element: resolved.element,
-          target: resolved.ref,
-          text,
-          ...(step.action === 'type' ? { slowly: true } : {})
+        await this.withElement(step, result, async resolved => {
+          await browser.callTool('browser_type', {
+            element: resolved.element,
+            target: resolved.ref,
+            text,
+            ...(step.action === 'type' ? { slowly: true } : {})
+          });
         });
 
         return;
@@ -211,12 +233,12 @@ export class StepExecutor {
       case 'select_option': {
         const value = this.requireValue(step);
 
-        const { resolved } = await this.resolveTarget(step, result);
-
-        await browser.callTool('browser_select_option', {
-          element: resolved.element,
-          target: resolved.ref,
-          values: [value]
+        await this.withElement(step, result, async resolved => {
+          await browser.callTool('browser_select_option', {
+            element: resolved.element,
+            target: resolved.ref,
+            values: [value]
+          });
         });
 
         return;
@@ -337,6 +359,150 @@ export class StepExecutor {
       }
     }
 
+    // The normal look-ups found nothing. Self-healing gets one more
+    // chance, but only for "element not found", never for provider
+    // failures.
+    if (
+      this.options.selfHeal &&
+      lastError instanceof SemanticResolverError
+    ) {
+      return this.healTarget(step, result, target, lastError);
+    }
+
     throw lastError;
+  }
+
+  /**
+   * Finds the element for a step and performs the action on it.
+   *
+   * If the browser refuses the action (for example the element went
+   * stale or something covered it), the page is read again, the element
+   * is looked up again with a fresh answer, and the action is retried
+   * once. That is the second kind of self-healing.
+   */
+  private async withElement(
+    step: ExecutionStep,
+    result: StepResult,
+    act: (
+      resolved: ResolvedTarget,
+      elements: SnapshotElement[]
+    ) => Promise<void>
+  ): Promise<void> {
+    const found = await this.resolveTarget(step, result);
+
+    try {
+      await act(found.resolved, found.elements);
+    } catch (error) {
+      if (
+        !this.options.selfHeal ||
+        result.healed ||
+        !(error instanceof BrowserSessionError)
+      ) {
+        throw error;
+      }
+
+      const { browser, resolver, captures } = this.options;
+
+      const yaml = extractSnapshotYaml(
+        await browser.callTool('browser_snapshot')
+      );
+
+      const elements = parseSnapshot(yaml);
+
+      const resolved = await resolver.resolve(
+        captures.renderTarget(step.target),
+        step.action,
+        elements,
+        yaml,
+        { fresh: true }
+      );
+
+      result.healed = {
+        problem: captures.redactAndShorten(errorMessage(error), 160),
+        repair: `looked the element up again and retried on ${resolved.element}`,
+        reason: resolved.reason
+      };
+
+      result.resolution = {
+        method: resolved.method,
+        element: resolved.element,
+        ref: resolved.ref,
+        reason: resolved.reason
+      };
+
+      await act(resolved, elements);
+    }
+  }
+
+  /**
+   * First kind of self-healing: the planned element is not on the page.
+   * The LLM may name a different element that serves the same purpose.
+   * If it names none, the original problem is reported, together with
+   * the fact that healing found no alternative.
+   */
+  private async healTarget(
+    step: ExecutionStep,
+    result: StepResult,
+    target: SemanticTarget,
+    original: SemanticResolverError
+  ): Promise<ResolvedStepTarget> {
+    const { browser, resolver, captures } = this.options;
+
+    const yaml = extractSnapshotYaml(
+      await browser.callTool('browser_snapshot')
+    );
+
+    const elements = parseSnapshot(yaml);
+
+    let resolved: ResolvedTarget;
+
+    try {
+      resolved = await resolver.heal(
+        {
+          target,
+          action: step.action,
+          instruction: this.renderOrKeep(step.instruction),
+          expectedObservation: this.renderOrKeep(step.expectedObservation),
+          problem: original.message
+        },
+        elements,
+        yaml
+      );
+    } catch (error) {
+      if (error instanceof SemanticResolverError) {
+        throw new SemanticResolverError(
+          `${original.message} Self-healing also failed: ${error.message}`
+        );
+      }
+
+      throw error;
+    }
+
+    result.healed = {
+      problem: captures.redactAndShorten(original.message, 160),
+      repair: `used ${resolved.element} instead`,
+      reason: resolved.reason
+    };
+
+    result.resolution = {
+      method: resolved.method,
+      element: resolved.element,
+      ref: resolved.ref,
+      reason: resolved.reason
+    };
+
+    return { resolved, elements };
+  }
+
+  /**
+   * Fills in placeholders in free text, or keeps the text as it is when
+   * a placeholder cannot be filled yet.
+   */
+  private renderOrKeep(text: string): string {
+    try {
+      return this.options.captures.render(text);
+    } catch {
+      return text;
+    }
   }
 }

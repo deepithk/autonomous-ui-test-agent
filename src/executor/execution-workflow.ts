@@ -33,6 +33,69 @@ export interface CriterionVerdict {
   assertionsTotal: number;
 }
 
+/**
+ * A step that first hit a problem and was repaired. A repair is shown
+ * even when the step still failed afterwards.
+ */
+export interface HealedStep {
+  scenarioId: string;
+  stepId: string;
+  outcome: 'passed' | 'failed';
+
+  /** What went wrong the first time. */
+  problem: string;
+
+  /** What the agent did about it. */
+  repair: string;
+
+  /** The LLM's stated reason for the replacement element. */
+  reason: string;
+}
+
+function collectHealedSteps(results: ScenarioResult[]): HealedStep[] {
+  return results.flatMap(result =>
+    result.steps.flatMap(step =>
+      step.healed
+        ? [
+            {
+              scenarioId: result.scenarioId,
+              stepId: step.stepId,
+              outcome: step.status,
+              ...step.healed
+            }
+          ]
+        : []
+    )
+  );
+}
+
+function renderHealedSteps(healing: HealedStep[]): string[] {
+  if (healing.length === 0) {
+    return [];
+  }
+
+  const lines = [
+    '',
+    '## Self-healing',
+    '',
+    'These steps hit a problem and were repaired before being run again. ' +
+      'A repair never decides a result: the assertions still check the page.',
+    '',
+    '| Step | Result | What went wrong | What was done | Why |',
+    '| --- | --- | --- | --- | --- |'
+  ];
+
+  for (const entry of healing) {
+    lines.push(
+      `| ${entry.scenarioId} ${entry.stepId} | ${entry.outcome} | ` +
+      `${cell(entry.problem)} | ${cell(entry.repair)} | ` +
+      `${cell(entry.reason)} |`
+    );
+  }
+
+  return lines;
+}
+
 export interface ExecutionRunReport {
   generatedAt: string;
   planReportPath: string;
@@ -55,7 +118,8 @@ export interface ExecutionRunReport {
 
   summary: {
     scenarios: Record<'passed' | 'failed' | 'error', number>;
-    steps: Record<'passed' | 'failed' | 'skipped', number>;
+    /** healed counts passed steps that first hit a problem and were repaired. */
+    steps: Record<'passed' | 'failed' | 'skipped' | 'healed', number>;
     assertions: Record<'passed' | 'failed' | 'error', number>;
   };
 
@@ -63,6 +127,9 @@ export interface ExecutionRunReport {
 
   /** Why anything that did not pass did not pass, and what to do. */
   failures: FailureFinding[];
+
+  /** Steps that hit a problem and were repaired by self-healing. */
+  healing: HealedStep[];
 
   scenarios: ScenarioResult[];
 }
@@ -211,7 +278,10 @@ export async function runExecutionWorkflow(
         skipped: results.reduce(
           (total, result) => total + result.skippedStepIds.length,
           0
-        )
+        ),
+        healed: steps.filter(
+          step => step.status === 'passed' && step.healed
+        ).length
       },
 
       assertions: count(
@@ -223,6 +293,8 @@ export async function runExecutionWorkflow(
     criteria: summarizeCriteria(plan.acceptanceCriteria, results),
 
     failures: results.flatMap(analyzeFailures),
+
+    healing: collectHealedSteps(results),
 
     scenarios: results
   };
@@ -320,6 +392,8 @@ export function renderMarkdownReport(
   }
 
   lines.push(...renderFailureDetails(report.failures));
+
+  lines.push(...renderHealedSteps(report.healing));
 
   for (const scenario of report.scenarios) {
     lines.push(

@@ -135,7 +135,13 @@ const envSchema = z.object({
     .int()
     .min(0)
     .max(5)
-    .default(2)
+    .default(2),
+
+  // Repair a step once before failing it. See TEST_PLAN.md, 9.3.
+  SELF_HEALING: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform(value => value === 'true')
 });
 
 export type AppConfig = z.infer<typeof envSchema>;

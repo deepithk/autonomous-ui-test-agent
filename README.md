@@ -152,6 +152,12 @@ The plan describes targets in plain words ("Add to cart button for the selected 
 
 Values seen on the page (for example the first product's name and price) are captured and reused in later steps and assertions, so scenarios do not depend on a hard-coded product.
 
+### Self-healing
+
+If the page changed a little since the plan was written, a step can fail although the application still works. Before failing a step, the agent makes one repair attempt: if the planned element is not found, the LLM may name a different element that serves the same purpose (and must refuse if the page is in a different state, such as a login error); if the browser refuses an action, the element is looked up again and the action retried once.
+
+A repair never decides a result, because the assertions still check the page. Every repair is shown in the log (`SELF-HEAL`), in a **Self-healing** table in the report and in the console. Switch it off with `SELF_HEALING=false`. Details: [TEST_PLAN.md](TEST_PLAN.md#93-self-healing-one-repair-per-step).
+
 ### How the agent avoids made-up results
 
 The LLM never decides pass or fail. It only says where to look; the comparison with the expected value is done in code. See the prompt strategy in [TEST_PLAN.md](TEST_PLAN.md#9-prompt-engineering-loop-prevention-and-guardrails).
@@ -183,6 +189,7 @@ All settings live in `.env`. Never commit it.
 | `SCENARIO_TIMEOUT_MS` | Time limit per scenario, not counting time spent saving evidence (default 60000) | execute |
 | `ACTION_TIMEOUT_MS` | Time limit per browser action (default 10000) | execute |
 | `MAX_ELEMENT_RECOVERY_ATTEMPTS` | Extra tries to find an element or re-check an assertion (default 2) | execute |
+| `SELF_HEALING` | `true` (default) to repair a step once before failing it (see below) | execute |
 | `GITHUB_*` | See "Planning from your own issue" | only to plan from GitHub |
 
 ### Choosing an LLM

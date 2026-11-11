@@ -58,10 +58,17 @@ export function formatLogEvent(
           ? 'PASSED'
           : `FAILED: ${oneLine(result.error ?? 'unknown error')}`;
 
+      // A step that was repaired says what went wrong and what was done.
+      const healed = result.healed
+        ? ` [SELF-HEAL: ${quote(shorten(result.healed.problem, 120))} ` +
+          `-> ${oneLine(result.healed.repair)}: ` +
+          `${quote(shorten(result.healed.reason, 120))}]`
+        : '';
+
       return (
         `${stamp} [${event.scenarioId}] [${result.stepId}] ` +
         `${event.action} ${quote(event.targetDescription)}${found}` +
-        `${captured} ${outcome} ${result.durationMs} ms`
+        `${captured}${healed} ${outcome} ${result.durationMs} ms`
       );
     }
 

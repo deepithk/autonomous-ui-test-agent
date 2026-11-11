@@ -112,6 +112,41 @@ describe('formatLogEvent', () => {
     );
   });
 
+  it('says what went wrong and what was done when a step was healed', () => {
+    const line = formatLogEvent(
+      {
+        type: 'step_finished',
+        scenarioId: 'SC-002',
+        action: 'click',
+        targetDescription: 'Checkout button',
+        result: {
+          stepId: 'STEP-09',
+          status: 'passed',
+          durationMs: 3000,
+          resolution: {
+            method: 'llm',
+            element: 'button "Proceed"',
+            ref: 'e7',
+            reason: 'Renamed button.'
+          },
+          healed: {
+            problem: 'No element matched "Checkout button"',
+            repair: 'used button "Proceed" instead',
+            reason: 'The button was renamed.'
+          }
+        }
+      },
+      AT
+    );
+
+    expect(line).toContain(
+      '[SELF-HEAL: "No element matched "Checkout button"" -> ' +
+      'used button "Proceed" instead: "The button was renamed."]'
+    );
+
+    expect(line).toContain(' PASSED 3000 ms');
+  });
+
   it('shortens a long LLM reason', () => {
     const line = formatLogEvent(
       {

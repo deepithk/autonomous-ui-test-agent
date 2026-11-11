@@ -20,6 +20,7 @@ import {
   ALL_SYSTEM_INSTRUCTION,
   BATCH_RESPONSE_SCHEMA,
   BATCH_SYSTEM_INSTRUCTION,
+  HEAL_SYSTEM_INSTRUCTION,
   ONE_RESPONSE_SCHEMA,
   ONE_SYSTEM_INSTRUCTION
 } from './resolver-prompts.js';
@@ -51,6 +52,20 @@ export interface ResolvedTarget {
 export interface LlmUsage {
   requests: number;
   reused: number;
+}
+
+/**
+ * What a step was trying to do and why its target could not be used,
+ * given to the LLM when self-healing.
+ */
+export interface HealRequest {
+  target: SemanticTarget;
+  action: BrowserAction;
+  instruction: string;
+  expectedObservation: string;
+
+  /** What went wrong, for example "No element matched ...". */
+  problem: string;
 }
 
 export interface LookupOptions {
@@ -176,7 +191,8 @@ export class SemanticResolver {
     target: SemanticTarget,
     action: BrowserAction,
     elements: SnapshotElement[],
-    snapshotYaml: string
+    snapshotYaml: string,
+    options: LookupOptions = {}
   ): Promise<ResolvedTarget> {
     const matches = narrowByAction(
       action,
@@ -208,7 +224,9 @@ export class SemanticResolver {
 
     const key = this.cacheKey('one', target, action, snapshotYaml);
 
-    const known = this.cache.get(key) as ResolvedTarget | undefined;
+    const known = options.fresh
+      ? undefined
+      : (this.cache.get(key) as ResolvedTarget | undefined);
 
     if (known) {
       this.reused++;
@@ -454,6 +472,76 @@ export class SemanticResolver {
     }
 
     return answers as ResolvedTarget[][];
+  }
+
+  /**
+   * Self-healing: a step could not use its planned target. Asks the LLM
+   * whether a different element on the current page serves the same
+   * purpose, and accepts the answer only if that element is really in
+   * the snapshot. The answer is never cached, because it depends on the
+   * failure it was given.
+   *
+   * Throws SemanticResolverError when there is no suitable element.
+   */
+  async heal(
+    request: HealRequest,
+    elements: SnapshotElement[],
+    snapshotYaml: string
+  ): Promise<ResolvedTarget> {
+    const description = request.target.description;
+
+    if (this.llm === null) {
+      throw new SemanticResolverError(
+        `Self-healing for "${description}" needs an LLM, and none is configured.`
+      );
+    }
+
+    this.requests++;
+
+    const result = await this.llm.generateStructured({
+      systemInstruction: HEAL_SYSTEM_INSTRUCTION,
+      prompt: [
+        'A test step could not use its planned target.',
+        `Step: ${request.action}: ${request.instruction}`,
+        `Expected result of the step: ${request.expectedObservation}`,
+        '',
+        'Planned target:',
+        JSON.stringify(request.target, null, 2),
+        '',
+        `Problem: ${request.problem}`,
+        '',
+        'Accessibility snapshot of the current page:',
+        snapshotYaml
+      ].join('\n'),
+      responseSchema: ONE_RESPONSE_SCHEMA,
+      maxOutputTokens: this.maxOutputTokens,
+      temperature: this.temperature
+    });
+
+    const parsed = parseLlmJson<{ ref?: unknown; reason?: unknown }>(
+      result.text,
+      `healing "${description}"`
+    );
+
+    const ref = typeof parsed.ref === 'string' ? parsed.ref.trim() : '';
+
+    const reason = typeof parsed.reason === 'string' ? parsed.reason : '';
+
+    if (ref === '') {
+      throw new SemanticResolverError(
+        `No alternative element found for "${description}": ` +
+        (reason || 'no reason given')
+      );
+    }
+
+    const [resolved] = this.toResolved(
+      [ref],
+      reason,
+      elements,
+      description
+    );
+
+    return resolved as ResolvedTarget;
   }
 
   private async resolveWithLlm(

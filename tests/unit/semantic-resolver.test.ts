@@ -219,6 +219,24 @@ describe('SemanticResolver', () => {
       expect(resolver.getUsage()).toEqual({ requests: 1, reused: 1 });
     });
 
+    it('asks again for a single element when a fresh answer is requested', async () => {
+      const { llm, generateStructured } = createLlm(
+        JSON.stringify({ ref: 'e124', reason: 'Cart button.' })
+      );
+
+      const resolver = new SemanticResolver(llm);
+
+      const cart = target({ description: 'Shopping cart icon' });
+
+      await resolver.resolve(cart, 'click', elements, INVENTORY_YAML);
+
+      await resolver.resolve(cart, 'click', elements, INVENTORY_YAML, {
+        fresh: true
+      });
+
+      expect(generateStructured).toHaveBeenCalledTimes(2);
+    });
+
     it('asks again when the page is different', async () => {
       const { llm, generateStructured } = createLlm(
         JSON.stringify({ ref: 'e124', reason: 'Cart button.' })
@@ -327,6 +345,82 @@ describe('SemanticResolver', () => {
           resolver.resolve(target(), 'click', elements, INVENTORY_YAML)
         ).rejects.toThrow(/Nothing/);
       }
+
+      expect(generateStructured).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('heal', () => {
+    const planned = target({ description: 'Checkout button' });
+
+    const request = {
+      target: planned,
+      action: 'click' as const,
+      instruction: 'Click checkout',
+      expectedObservation: 'Checkout opens',
+      problem: 'No element matched "Checkout button"'
+    };
+
+    it('returns the replacement the LLM names', async () => {
+      const { llm, generateStructured } = createLlm(
+        JSON.stringify({ ref: 'e54', reason: 'Renamed button.' })
+      );
+
+      const resolver = new SemanticResolver(llm);
+
+      const healed = await resolver.heal(request, elements, INVENTORY_YAML);
+
+      expect(healed).toMatchObject({
+        ref: 'e54',
+        method: 'llm',
+        reason: 'Renamed button.'
+      });
+
+      expect(generateStructured.mock.calls[0]?.[0].prompt).toContain(
+        'Problem: No element matched "Checkout button"'
+      );
+
+      expect(resolver.getUsage().requests).toBe(1);
+    });
+
+    it('fails when the LLM names no replacement', async () => {
+      const { llm } = createLlm(
+        JSON.stringify({ ref: '', reason: 'The page shows a login error.' })
+      );
+
+      await expect(
+        new SemanticResolver(llm).heal(request, elements, INVENTORY_YAML)
+      ).rejects.toThrow(
+        'No alternative element found for "Checkout button": ' +
+          'The page shows a login error.'
+      );
+    });
+
+    it('rejects a replacement that is not in the snapshot', async () => {
+      const { llm } = createLlm(
+        JSON.stringify({ ref: 'e999', reason: 'Guess.' })
+      );
+
+      await expect(
+        new SemanticResolver(llm).heal(request, elements, INVENTORY_YAML)
+      ).rejects.toThrow(/not in the snapshot/);
+    });
+
+    it('needs an LLM', async () => {
+      await expect(
+        new SemanticResolver(null).heal(request, elements, INVENTORY_YAML)
+      ).rejects.toThrow(/needs an LLM/);
+    });
+
+    it('never remembers a healing answer', async () => {
+      const { llm, generateStructured } = createLlm(
+        JSON.stringify({ ref: 'e54', reason: 'Renamed.' })
+      );
+
+      const resolver = new SemanticResolver(llm);
+
+      await resolver.heal(request, elements, INVENTORY_YAML);
+      await resolver.heal(request, elements, INVENTORY_YAML);
 
       expect(generateStructured).toHaveBeenCalledTimes(2);
     });
