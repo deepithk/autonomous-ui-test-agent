@@ -155,6 +155,23 @@ export function findPageNotes(
 }
 
 /**
+ * The value of a form field. A dropdown's value is the option it shows;
+ * any other field's value is the text the snapshot gives it.
+ */
+export function getFieldValue(
+  elements: SnapshotElement[],
+  index: number
+): string {
+  const element = elements[index];
+
+  if (element?.role === 'combobox' || element?.role === 'listbox') {
+    return getElementText(elements, index);
+  }
+
+  return element?.text ?? '';
+}
+
+/**
  * The text of each node inside an element: its own text, or its name when
  * it has none. Used to tell whether a value is displayed as a node of its
  * own inside a container, such as a product name inside a product card.

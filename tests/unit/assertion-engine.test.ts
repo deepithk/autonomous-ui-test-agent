@@ -161,6 +161,24 @@ describe('AssertionEngine', () => {
     expect(result.actual).toBe('$9.99');
   });
 
+  it('reads the shown option as the value of a dropdown', async () => {
+    const { engine } = setup({ refs: ['e38'] });
+
+    const shown = await engine.evaluate(
+      assertion({ type: 'input_value', expectedValue: 'Name (A to Z)' })
+    );
+
+    expect(shown.status).toBe('passed');
+
+    // An internal value such as an HTML option value is not shown.
+    const internal = await engine.evaluate(
+      assertion({ type: 'input_value', expectedValue: 'az' })
+    );
+
+    expect(internal.status).toBe('failed');
+    expect(internal.actual).toBe('Name (A to Z)');
+  });
+
   describe('text of a container the LLM chose', () => {
     // e43 is a whole product card: the name, the description, the price
     // and a button are all inside it.

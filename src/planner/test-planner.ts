@@ -566,6 +566,10 @@ REQUIRED PLANNING BEHAVIOUR:
     Then text must be checked: it must appear as the expected
     value, or in the target, of an assertion for that criterion.
 
+36. An expected value is what a user sees on the page, written as
+    the criterion writes it. Never use an internal value such as an
+    HTML attribute value or an identifier from the page source.
+
 Return structured JSON matching the required response schema.
 ${feedback}`;
   }

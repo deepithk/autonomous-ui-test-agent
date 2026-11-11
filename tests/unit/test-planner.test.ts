@@ -314,6 +314,7 @@ describe('TestPlanner', () => {
     it('asks for an assertion for every condition and quoted value', async () => {
       const prompt = await promptFor();
 
+      expect(prompt).toContain('Never use an internal value');
       expect(prompt).toContain('needs a separate assertion for each');
       expect(prompt).toContain('quotation marks');
     });

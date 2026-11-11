@@ -19,6 +19,7 @@ import {
   extractSnapshotYaml,
   getDescendantTexts,
   getElementText,
+  getFieldValue,
   parseSnapshot
 } from './snapshot.js';
 
@@ -140,7 +141,7 @@ function judge(
       const values = found.map(entry =>
         collapseWhitespace(
           type === 'input_value'
-            ? (page.elements[entry.index]?.text ?? '')
+            ? getFieldValue(page.elements, entry.index)
             : getElementText(page.elements, entry.index)
         )
       );
