@@ -46,7 +46,15 @@ export interface PlanRequestOptions {
  * Planner errors.
  */
 export class TestPlannerError extends Error {
-  constructor(message: string) {
+  /**
+   * @param retryable true when asking the LLM again, with the reason, may
+   *                  fix it: the plan was unreadable or was rejected by
+   *                  validation. Provider failures are not retryable.
+   */
+  constructor(
+    message: string,
+    public readonly retryable = false
+  ) {
     super(message);
     this.name = 'TestPlannerError';
   }
@@ -178,6 +186,29 @@ export class TestPlanner {
     criteria: readonly AcceptanceCriterion[],
     request: PlanRequestOptions = {}
   ): Promise<GeneratedTestPlan> {
+    try {
+      return await this.attemptPlan(criteria, request);
+    } catch (error) {
+      // An unreadable or rejected plan gets one more attempt, told why it
+      // was rejected. Provider failures are not retried here.
+      if (!(error instanceof TestPlannerError) || !error.retryable) {
+        throw error;
+      }
+
+      return this.attemptPlan(criteria, {
+        ...request,
+        feedback:
+          (request.feedback ? `${request.feedback}\n\n` : '') +
+          `The previous plan was rejected: ${error.message}\n` +
+          'Return a corrected, complete plan.'
+      });
+    }
+  }
+
+  private async attemptPlan(
+    criteria: readonly AcceptanceCriterion[],
+    request: PlanRequestOptions
+  ): Promise<GeneratedTestPlan> {
 
     this.validateSourceCriteria(criteria);
 
@@ -231,7 +262,8 @@ export class TestPlanner {
       parsedResponse = JSON.parse(response.text);
     } catch {
       throw new TestPlannerError(
-        'LLM returned invalid JSON. Test plan generation was rejected.'
+        'LLM returned invalid JSON. Test plan generation was rejected.',
+        true
       );
     }
 
@@ -245,7 +277,8 @@ export class TestPlanner {
     } catch (error: unknown) {
       throw new TestPlannerError(
         'Generated test plan validation failed: ' +
-        errorMessage(error, 'Unknown validation error')
+        errorMessage(error, 'Unknown validation error'),
+        true
       );
     }
 

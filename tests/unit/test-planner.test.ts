@@ -208,6 +208,74 @@ describe('TestPlanner', () => {
     );
   });
 
+  describe('a rejected plan', () => {
+    /** The valid plan, but its first step navigates without a URL. */
+    const brokenPlan = () => {
+      const plan = JSON.parse(JSON.stringify(validPlan));
+
+      plan.scenarios[0].steps[0] = {
+        ...plan.scenarios[0].steps[0],
+        action: 'navigate',
+        value: null,
+        capture: null
+      };
+
+      return plan;
+    };
+
+    const respond = (
+      generateStructured: ReturnType<typeof vi.fn>,
+      plan: unknown
+    ) =>
+      generateStructured.mockImplementationOnce(async () => ({
+        text: JSON.stringify(plan),
+        model: 'test-model'
+      }));
+
+    it('is asked again once, told why, and the corrected plan is used', async () => {
+      const { provider, generateStructured } = createMockProvider();
+
+      respond(generateStructured, brokenPlan());
+
+      const result = await new TestPlanner(provider).generateTestPlan(
+        validCriteria
+      );
+
+      expect(result.planTitle).toBe('SauceDemo Shopping Cart Test Plan');
+      expect(generateStructured).toHaveBeenCalledTimes(2);
+
+      const retryPrompt = generateStructured.mock.calls[1]?.[0].prompt;
+
+      expect(retryPrompt).toContain('The previous plan was rejected');
+      expect(retryPrompt).toContain('requires a value');
+    });
+
+    it('fails after the second attempt, and never asks a third time', async () => {
+      const { provider, generateStructured } = createMockProvider();
+
+      respond(generateStructured, brokenPlan());
+      respond(generateStructured, brokenPlan());
+
+      await expect(
+        new TestPlanner(provider).generateTestPlan(validCriteria)
+      ).rejects.toThrow(/validation failed[\s\S]*requires a value/);
+
+      expect(generateStructured).toHaveBeenCalledTimes(2);
+    });
+
+    it('is not asked again when the provider itself fails', async () => {
+      const { provider, generateStructured } = createMockProvider({
+        error: new Error('429 quota exceeded')
+      });
+
+      await expect(
+        new TestPlanner(provider).generateTestPlan(validCriteria)
+      ).rejects.toThrow(/quota exceeded/);
+
+      expect(generateStructured).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('planning request', () => {
     async function promptFor(
       request?: { issueTitle?: string; feedback?: string }

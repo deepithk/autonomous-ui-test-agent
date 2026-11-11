@@ -15,6 +15,16 @@ export const BrowserActionSchema = z.enum([
   'wait_for'
 ]);
 
+/** Actions that do nothing without a value (a URL, text or a key). */
+const VALUE_REQUIRED_ACTIONS: ReadonlySet<string> = new Set([
+  'navigate',
+  'fill',
+  'type',
+  'press_key',
+  'select_option',
+  'wait_for'
+]);
+
 /**
  * Describes a browser target using semantic information.
  */
@@ -54,6 +64,19 @@ export const ExecutionStepSchema = z.object({
       code: 'custom',
       path: ['capture'],
       message: 'Values can only be captured during observe actions.'
+    });
+  }
+
+  // The executor cannot run these actions without a value. Catching it
+  // here stops a broken plan before a browser is opened.
+  if (
+    VALUE_REQUIRED_ACTIONS.has(step.action) &&
+    (step.value === null || step.value.trim() === '')
+  ) {
+    context.addIssue({
+      code: 'custom',
+      path: ['value'],
+      message: `The ${step.action} action requires a value.`
     });
   }
 });
