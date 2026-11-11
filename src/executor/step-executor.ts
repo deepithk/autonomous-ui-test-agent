@@ -57,8 +57,10 @@ export interface StepExecutorOptions {
   selfHeal?: boolean;
 }
 
+// A dropped or changed connection, or a page load that timed out. Both
+// are usually brief, so opening the page is tried once more.
 const NETWORK_ERROR_PATTERN =
-  /net::ERR_(NETWORK_CHANGED|CONNECTION|INTERNET|NAME_NOT_RESOLVED|TIMED_OUT)/i;
+  /net::ERR_(NETWORK_CHANGED|CONNECTION|INTERNET|NAME_NOT_RESOLVED|TIMED_OUT)|Request timed out/i;
 
 export interface StepResult {
   stepId: string;
@@ -256,8 +258,9 @@ export class StepExecutor {
 
   /**
    * Opens a page. A network error from the browser (the connection
-   * dropped or changed) is retried once after a short wait, because
-   * these are usually brief. Any other error is not retried.
+   * dropped or changed) or a page load that timed out is retried once
+   * after a short wait, because these are usually brief. Any other
+   * error is not retried.
    */
   private async navigate(url: string): Promise<void> {
     try {

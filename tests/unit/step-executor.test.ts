@@ -428,6 +428,19 @@ describe('StepExecutor', () => {
       expect(navigateCalls(callTool)).toHaveLength(2);
     });
 
+    it('retries once when the page load timed out', async () => {
+      const { executor, callTool } = setup();
+
+      callTool.mockRejectedValueOnce(
+        new Error('MCP error -32001: Request timed out')
+      );
+
+      const result = await executor.execute(navigateStep());
+
+      expect(result.status).toBe('passed');
+      expect(navigateCalls(callTool)).toHaveLength(2);
+    });
+
     it('fails after the one retry when the network is still down', async () => {
       const { executor, callTool } = setup();
 

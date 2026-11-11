@@ -221,8 +221,17 @@ as a run artifact, and comments the report on the issue.
   job as a whole, so installing packages and running other actions never see
   it. Issue text is treated as untrusted data by the planner, and the
   workflow never places it in a shell command.
-- **Results are always reported.** The evidence upload and the comment run
-  even when the tests failed, and a failing criterion makes the run fail.
+- **Results are always reported, and only this run's results.** The evidence
+  upload and the comment run even when the tests failed, and a failing
+  criterion makes the run fail. The repository holds the evidence of earlier
+  runs, so the workflow empties the evidence folder first; a run that stops
+  early can therefore never post an old result. If there is no report, the
+  comment says "The tests did not run" and quotes the reason the step gave,
+  for example "No acceptance criteria found. Expected headings such as
+  ### AC-01: Login."
+- **Slower limits on a hosted runner.** `ACTION_TIMEOUT_MS` is 20 seconds and
+  `SCENARIO_TIMEOUT_MS` 90 seconds there, because a fresh browser on a hosted
+  runner is slower than a laptop.
 - **One run per issue at a time**, so the same issue is not tested twice at
   once.
 
@@ -387,8 +396,10 @@ until". Every retry is bounded:
 - Temporary LLM provider errors, when planning and when executing: at most
   three attempts with short waits. Quota errors are never retried.
 - A page that fails to open with a browser network error (for example the
-  connection changed): retried once after a short wait. Other navigation
-  errors are not retried.
+  connection changed) or a timeout: retried once after a short wait. Other
+  navigation errors are not retried. Opening a page may take at least 30
+  seconds, even when `ACTION_TIMEOUT_MS` is lower, because the first load in a
+  fresh browser is the slowest.
 - The first failed step stops its scenario.
 - A scenario has a maximum number of steps and a time limit (9.2).
 - Self-healing makes one repair attempt per step and never more (9.3).
@@ -546,8 +557,8 @@ section, so the reader does not have to dig through the log. Each entry has:
 
 - A **kind**: the application does not match the criterion; the agent could
   not complete the step; an LLM provider problem (not an application defect);
-  a network problem, when the browser could not reach the site (also not an
-  application defect); or a run limit was reached.
+  a network problem, when the browser could not reach the site or a request
+  timed out (also not an application defect); or a run limit was reached.
 - **What happened**, in one sentence, with the expected and actual value for
   an assertion.
 - The acceptance criteria it affects.

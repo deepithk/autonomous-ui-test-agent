@@ -57,6 +57,9 @@ const NOT_FOUND_PATTERN =
 
 const NAVIGATION_PATTERN = /Navigation to|Invalid navigation URL/i;
 
+const TIMEOUT_PATTERN =
+  /Request timed out|MCP error -32001|Timeout \d+ms exceeded/i;
+
 const NETWORK_PATTERN =
   /net::ERR_|ERR_NETWORK|ERR_CONNECTION|ERR_INTERNET|ERR_NAME_NOT_RESOLVED|ERR_TIMED_OUT|ENOTFOUND/i;
 
@@ -104,6 +107,16 @@ export function classifyMessage(message: string): {
         'The browser could not reach the site. This points to a network ' +
         'problem, not the application. Check the connection (and any VPN ' +
         'or proxy) and run again.'
+    };
+  }
+
+  if (TIMEOUT_PATTERN.test(message)) {
+    return {
+      category: 'environment',
+      advice:
+        'A browser request timed out: the site or the machine was slow ' +
+        'to respond. Run it again, or raise ACTION_TIMEOUT_MS (opening a ' +
+        'page already gets at least 30 seconds).'
     };
   }
 

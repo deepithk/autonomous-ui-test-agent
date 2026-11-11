@@ -159,6 +159,8 @@ gh label create "status: RFQA" --color 0E8A16 --description "Ready for QA: start
 
 The run is red if any criterion fails, and the comment is posted either way. Each run makes about 8 LLM requests.
 
+If an issue cannot be tested, the run stops before any browser opens and the comment says why: for example the issue is not in RFQA (the board or the label says otherwise), or its acceptance criteria are not written as `### AC-01: Title` headings. Only evidence from the run itself is ever reported.
+
 ## How it works
 
 ```

@@ -64,6 +64,9 @@ export class BrowserSessionError extends Error {
   }
 }
 
+/** The least time a page load may take before it is given up on. */
+const NAVIGATION_TIMEOUT_MS = 30000;
+
 const ALLOWED_TOOLS: ReadonlySet<string> = new Set(
   ALLOWED_PLAYWRIGHT_MCP_TOOLS
 );
@@ -166,6 +169,17 @@ export class BrowserSession {
   }
 
   /**
+   * How long a call may take. Opening a page is allowed longer than a
+   * click: the first page load in a fresh browser on a slow machine, such
+   * as a hosted CI runner, can take far more than a normal action.
+   */
+  private timeoutFor(toolName: string): number {
+    return toolName === 'browser_navigate'
+      ? Math.max(this.actionTimeoutMs, NAVIGATION_TIMEOUT_MS)
+      : this.actionTimeoutMs;
+  }
+
+  /**
    * Calls an allow-listed tool with the configured timeout.
    * Tool errors are thrown as BrowserSessionError.
    */
@@ -194,7 +208,7 @@ export class BrowserSession {
     const result = await this.client.callTool(
       { name, arguments: args },
       undefined,
-      { timeout: this.actionTimeoutMs }
+      { timeout: this.timeoutFor(name) }
     );
 
     const content = Array.isArray(result.content)

@@ -43,6 +43,8 @@ describe('classifyMessage', () => {
     ['Gemini returned an empty response.', 'llm-provider', /API key/],
     ['Scenario exceeded its 60000 ms time limit.', 'limit', /SCENARIO_TIMEOUT_MS/],
     ['Tool "browser_navigate" failed: net::ERR_NETWORK_CHANGED at https://x', 'environment', /network problem, not the application/],
+    ['MCP error -32001: Request timed out', 'environment', /ACTION_TIMEOUT_MS/],
+    ['Tool "browser_click" failed: Timeout 5000ms exceeded.', 'environment', /slow to respond/],
     ['Navigation to https://evil.example is not allowed.', 'automation', /blocked/],
     ['No element matched "Cart"', 'automation', /not found on the page/],
     ['something unexpected', 'automation', /execution log/]

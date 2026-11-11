@@ -72,11 +72,30 @@ describe('BrowserSession', () => {
 
     const session = await openSession(client);
 
-    const content = await session.callTool('browser_navigate', {
-      url: 'https://www.saucedemo.com/'
+    const content = await session.callTool('browser_click', {
+      target: 'e1'
     });
 
     expect(content).toEqual([{ type: 'text', text: 'ok' }]);
+
+    expect(client.callTool).toHaveBeenCalledWith(
+      {
+        name: 'browser_click',
+        arguments: { target: 'e1' }
+      },
+      undefined,
+      { timeout: 5000 }
+    );
+  });
+
+  it('allows opening a page longer than a normal action', async () => {
+    const client = createClient();
+
+    const session = await openSession(client);
+
+    await session.callTool('browser_navigate', {
+      url: 'https://www.saucedemo.com/'
+    });
 
     expect(client.callTool).toHaveBeenCalledWith(
       {
@@ -84,7 +103,28 @@ describe('BrowserSession', () => {
         arguments: { url: 'https://www.saucedemo.com/' }
       },
       undefined,
-      { timeout: 5000 }
+      { timeout: 30000 }
+    );
+  });
+
+  it('never shortens a page load below the configured action timeout', async () => {
+    const client = createClient();
+
+    const session = await BrowserSession.open({
+      headless: true,
+      caps: 'testing',
+      actionTimeoutMs: 90000,
+      connect: async () => client
+    });
+
+    await session.callTool('browser_navigate', {
+      url: 'https://www.saucedemo.com/'
+    });
+
+    expect(client.callTool).toHaveBeenCalledWith(
+      expect.anything(),
+      undefined,
+      { timeout: 90000 }
     );
   });
 

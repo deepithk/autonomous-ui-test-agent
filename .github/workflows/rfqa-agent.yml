@@ -61,6 +61,10 @@ jobs:
 
       PLAYWRIGHT_MCP_HEADLESS: 'true'
 
+      # A hosted runner starts a fresh browser and is slower than a laptop.
+      ACTION_TIMEOUT_MS: '20000'
+      SCENARIO_TIMEOUT_MS: '90000'
+
     steps:
       - name: Check that the API key is set
         env:
@@ -80,6 +84,14 @@ jobs:
           node-version: '24.x'
           cache: npm
 
+      # The repository contains the evidence of earlier runs. Starting from
+      # an empty folder means this run can only report its own evidence, and
+      # a run that stops early can never post an old result.
+      - name: Start with an empty evidence folder
+        run: |
+          rm -rf evidence
+          mkdir -p evidence/reports evidence/logs evidence/screenshots
+
       - name: Install dependencies
         run: npm ci
 
@@ -89,18 +101,22 @@ jobs:
       # The built-in token can read issues. To also check the Projects board,
       # add a token that can read it as PROJECT_READ_TOKEN; without it the
       # agent falls back to the "status: RFQA" label.
+      # The console output of the next two steps is saved, so that if one of
+      # them stops early, the comment on the issue can say why.
       - name: Plan the tests from the issue
+        shell: bash
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.PROJECT_READ_TOKEN || secrets.GITHUB_TOKEN }}
           SAUCEDEMO_PASSWORD: ${{ secrets.SAUCEDEMO_PASSWORD || 'secret_sauce' }}
-        run: npm run plan:issue
+        run: npm run plan:issue 2>&1 | tee evidence/logs/plan-console.log
 
       - name: Run the tests
+        shell: bash
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           SAUCEDEMO_PASSWORD: ${{ secrets.SAUCEDEMO_PASSWORD || 'secret_sauce' }}
-        run: npm run execute:plan -- --label "issue-${ISSUE_NUMBER}"
+        run: npm run execute:plan -- --label "issue-${ISSUE_NUMBER}" 2>&1 | tee evidence/logs/execute-console.log
 
       # The steps below run even when the tests failed, so that a failing
       # run still leaves its evidence and its explanation behind.
@@ -119,6 +135,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
+          # The evidence folder was emptied at the start, so any report here
+          # was made by this run.
           REPORT="$(ls -t evidence/reports/test-execution-*.md 2>/dev/null | head -n 1 || true)"
 
           {
@@ -129,7 +147,18 @@ jobs:
             if [ -n "$REPORT" ]; then
               head -c 60000 "$REPORT"
             else
-              echo "No report was produced. The run stopped before the tests finished; see the workflow run for the reason."
+              echo "**The tests did not run.** The run stopped before it produced a report. The reason it gave:"
+              echo
+              echo '```text'
+              # The newest console log is the step that stopped. Backticks are
+              # replaced so that text from the issue cannot break out of this block.
+              CONSOLE="$(ls -t evidence/logs/*-console.log 2>/dev/null | head -n 1 || true)"
+              if [ -n "$CONSOLE" ]; then
+                { grep -A6 '\[ERROR\]' "$CONSOLE" || tail -n 12 "$CONSOLE"; } | head -n 14 | sed 's/`/'"'"'/g'
+              else
+                echo "No output was captured; see the workflow run."
+              fi
+              echo '```'
             fi
           } > comment.md
 
