@@ -42,7 +42,13 @@ export interface StepExecutorOptions {
 
   /** Extra attempts to find an element after the first one. */
   recoveryAttempts: number;
+
+  /** Wait before the one retry of a navigation that hit a network error. */
+  networkRetryDelayMs?: number;
 }
+
+const NETWORK_ERROR_PATTERN =
+  /net::ERR_(NETWORK_CHANGED|CONNECTION|INTERNET|NAME_NOT_RESOLVED|TIMED_OUT)/i;
 
 export interface StepResult {
   stepId: string;
@@ -128,7 +134,7 @@ export class StepExecutor {
 
         this.assertAllowedUrl(url);
 
-        await browser.callTool('browser_navigate', { url });
+        await this.navigate(url);
 
         return;
       }
@@ -224,6 +230,30 @@ export class StepExecutor {
           `Unsupported action: ${String(unsupported)}`
         );
       }
+    }
+  }
+
+  /**
+   * Opens a page. A network error from the browser (the connection
+   * dropped or changed) is retried once after a short wait, because
+   * these are usually brief. Any other error is not retried.
+   */
+  private async navigate(url: string): Promise<void> {
+    try {
+      await this.options.browser.callTool('browser_navigate', { url });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : String(error);
+
+      if (!NETWORK_ERROR_PATTERN.test(message)) {
+        throw error;
+      }
+
+      await new Promise(resolve =>
+        setTimeout(resolve, this.options.networkRetryDelayMs ?? 1500)
+      );
+
+      await this.options.browser.callTool('browser_navigate', { url });
     }
   }
 

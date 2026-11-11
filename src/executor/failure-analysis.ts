@@ -5,12 +5,15 @@ import type { ScenarioResult } from './scenario-runner.js';
  * automation:   the agent could not complete a step on the page.
  * llm-provider: the LLM service failed or refused the request. This says
  *               nothing about the application.
+ * environment:  the browser could not reach the site (a network problem).
+ *               This says nothing about the application either.
  * limit:        a configured run limit was reached.
  */
 export type FailureCategory =
   | 'application'
   | 'automation'
   | 'llm-provider'
+  | 'environment'
   | 'limit';
 
 export interface FailureFinding {
@@ -51,6 +54,9 @@ const NOT_FOUND_PATTERN =
 
 const NAVIGATION_PATTERN = /Navigation to|Invalid navigation URL/i;
 
+const NETWORK_PATTERN =
+  /net::ERR_|ERR_NETWORK|ERR_CONNECTION|ERR_INTERNET|ERR_NAME_NOT_RESOLVED|ERR_TIMED_OUT|ENOTFOUND/i;
+
 const LIMIT_PATTERN = /time limit|more than the limit/i;
 
 /**
@@ -85,6 +91,16 @@ export function classifyMessage(message: string): {
       advice:
         'The LLM service did not give a usable answer. Check the API ' +
         'key and model name, then run again.'
+    };
+  }
+
+  if (NETWORK_PATTERN.test(message)) {
+    return {
+      category: 'environment',
+      advice:
+        'The browser could not reach the site. This points to a network ' +
+        'problem, not the application. Check the connection (and any VPN ' +
+        'or proxy) and run again.'
     };
   }
 

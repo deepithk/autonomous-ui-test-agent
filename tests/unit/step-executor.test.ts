@@ -84,7 +84,8 @@ function setup(
     resolver: new SemanticResolver(llm),
     captures,
     allowedOrigin: 'https://www.saucedemo.com',
-    recoveryAttempts: options.recoveryAttempts ?? 0
+    recoveryAttempts: options.recoveryAttempts ?? 0,
+    networkRetryDelayMs: 0
   });
 
   return { executor, callTool, captures, llm };
@@ -105,6 +106,52 @@ describe('StepExecutor', () => {
 
     expect(callTool).toHaveBeenCalledWith('browser_navigate', {
       url: 'https://www.saucedemo.com/'
+    });
+  });
+
+  describe('navigation network errors', () => {
+    const NETWORK_ERROR = new Error(
+      'Tool "browser_navigate" failed: net::ERR_NETWORK_CHANGED'
+    );
+
+    const navigateStep = () =>
+      step({ action: 'navigate', value: 'https://www.saucedemo.com/' });
+
+    const navigateCalls = (callTool: ReturnType<typeof vi.fn>) =>
+      callTool.mock.calls.filter(call => call[0] === 'browser_navigate');
+
+    it('retries once after a network error and then succeeds', async () => {
+      const { executor, callTool } = setup();
+
+      callTool.mockRejectedValueOnce(NETWORK_ERROR);
+
+      const result = await executor.execute(navigateStep());
+
+      expect(result.status).toBe('passed');
+      expect(navigateCalls(callTool)).toHaveLength(2);
+    });
+
+    it('fails after the one retry when the network is still down', async () => {
+      const { executor, callTool } = setup();
+
+      callTool.mockRejectedValue(NETWORK_ERROR);
+
+      const result = await executor.execute(navigateStep());
+
+      expect(result.status).toBe('failed');
+      expect(result.error).toMatch(/ERR_NETWORK_CHANGED/);
+      expect(navigateCalls(callTool)).toHaveLength(2);
+    });
+
+    it('does not retry other errors', async () => {
+      const { executor, callTool } = setup();
+
+      callTool.mockRejectedValue(new Error('Tool failed: something else'));
+
+      const result = await executor.execute(navigateStep());
+
+      expect(result.status).toBe('failed');
+      expect(navigateCalls(callTool)).toHaveLength(1);
     });
   });
 

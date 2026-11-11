@@ -42,6 +42,7 @@ describe('classifyMessage', () => {
     ['Gemini generation failed: 503 UNAVAILABLE', 'llm-provider', /again/],
     ['Gemini returned an empty response.', 'llm-provider', /API key/],
     ['Scenario exceeded its 60000 ms time limit.', 'limit', /SCENARIO_TIMEOUT_MS/],
+    ['Tool "browser_navigate" failed: net::ERR_NETWORK_CHANGED at https://x', 'environment', /network problem, not the application/],
     ['Navigation to https://evil.example is not allowed.', 'automation', /blocked/],
     ['No element matched "Cart"', 'automation', /not found on the page/],
     ['something unexpected', 'automation', /execution log/]

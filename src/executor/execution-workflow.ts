@@ -234,6 +234,7 @@ const CATEGORY_TEXT: Record<FailureCategory, string> = {
   application: 'Application behaviour does not match the criterion',
   automation: 'The agent could not complete the step',
   'llm-provider': 'LLM provider problem (not an application defect)',
+  environment: 'Network problem (not an application defect)',
   limit: 'A run limit was reached'
 };
 

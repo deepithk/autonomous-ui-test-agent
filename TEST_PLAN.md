@@ -353,8 +353,11 @@ until". Every retry is bounded:
 - Looking for an element again: at most `MAX_ELEMENT_RECOVERY_ATTEMPTS`
   times, one second apart, with a fresh page snapshot each time.
 - Re-checking an assertion: the same limit.
-- Temporary LLM provider errors: at most three attempts with short waits.
-  Quota errors are never retried.
+- Temporary LLM provider errors, when planning and when executing: at most
+  three attempts with short waits. Quota errors are never retried.
+- A page that fails to open with a browser network error (for example the
+  connection changed): retried once after a short wait. Other navigation
+  errors are not retried.
 - The first failed step stops its scenario.
 - A scenario has a maximum number of steps and a time limit (9.2).
 
@@ -471,7 +474,8 @@ section, so the reader does not have to dig through the log. Each entry has:
 
 - A **kind**: the application does not match the criterion; the agent could
   not complete the step; an LLM provider problem (not an application defect);
-  or a run limit was reached.
+  a network problem, when the browser could not reach the site (also not an
+  application defect); or a run limit was reached.
 - **What happened**, in one sentence, with the expected and actual value for
   an assertion.
 - The acceptance criteria it affects.
