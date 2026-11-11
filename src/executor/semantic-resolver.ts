@@ -261,9 +261,21 @@ function narrowByAction(
 }
 
 function describeElement(element: SnapshotElement): string {
-  return element.name
-    ? `${element.role} "${element.name}"`
-    : element.role;
+  if (element.name) {
+    return `${element.role} "${element.name}"`;
+  }
+
+  // Elements without a name, such as a price, are described by the
+  // text they show.
+  const text = element.text.replace(/\s+/g, ' ').trim();
+
+  if (text) {
+    const shown = text.length > 60 ? `${text.slice(0, 60)}...` : text;
+
+    return `${element.role} "${shown}"`;
+  }
+
+  return element.role;
 }
 
 /**

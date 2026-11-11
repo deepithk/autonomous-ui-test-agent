@@ -278,6 +278,23 @@ describe('ScenarioRunner', () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
+  it('says which step blocked an assertion, without repeating its message', async () => {
+    const { browser } = createBrowser();
+
+    const { runner } = createRunner(browser);
+
+    const result = await runner.run(
+      scenario(
+        [step(1, { value: 'https://evil.example/' })],
+        [urlAssertion(1, 'STEP-01', '/')]
+      )
+    );
+
+    expect(result.assertions[0]?.error).toBe(
+      'Not evaluated: STEP-01 failed.'
+    );
+  });
+
   it('refuses scenarios with too many steps without opening a browser', async () => {
     const { browser } = createBrowser();
 

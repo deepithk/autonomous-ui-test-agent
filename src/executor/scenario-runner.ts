@@ -268,6 +268,10 @@ export class ScenarioRunner {
 
     let failureReason: string | undefined;
 
+    // Why assertions that never ran are listed as not evaluated: short
+    // on purpose, because the failing step carries the full message.
+    let notRunBecause: string | undefined;
+
     try {
       browser = await this.options.openBrowser();
 
@@ -314,6 +318,8 @@ export class ScenarioRunner {
 
         if (stepResult.status === 'failed') {
           failureReason = `${step.stepId} failed: ${stepResult.error ?? 'unknown error'}`;
+
+          notRunBecause = `${step.stepId} failed`;
 
           evidenceMs += await this.observeFailure(
             browser,
@@ -410,7 +416,9 @@ export class ScenarioRunner {
 
       const skipped = this.notEvaluated(
         assertion,
-        failureReason ?? 'an earlier step did not complete'
+        notRunBecause ??
+          failureReason ??
+          'an earlier step did not complete'
       );
 
       this.emit({
@@ -486,7 +494,7 @@ export class ScenarioRunner {
       actual: '',
       explanation: assertion.explanation,
       durationMs: 0,
-      error: `Not evaluated: ${reason}.`
+      error: `Not evaluated: ${reason.replace(/\.+$/, '')}.`
     };
   }
 

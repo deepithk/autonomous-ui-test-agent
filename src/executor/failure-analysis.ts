@@ -202,9 +202,9 @@ export function analyzeFailures(
             : ''),
         advice:
           'The page was checked and does not match the acceptance ' +
-          `criterion ${assertion.acceptanceCriterionId}. If the page ` +
-          'notes below explain it, fix the cause; otherwise compare ' +
-          'the screenshot with the criterion.',
+          `criterion ${assertion.acceptanceCriterionId}. If the ` +
+          'messages on the page explain it, fix the cause; otherwise ' +
+          'compare the screenshot with the criterion.',
         criterionIds: [assertion.acceptanceCriterionId],
         stepId: assertion.afterStepId,
         expected: assertion.expected,

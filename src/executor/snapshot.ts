@@ -129,8 +129,12 @@ export function findPageNotes(
 
     const isAlert = ALERT_ROLES.has(element.role);
 
+    // A message is a sentence. Text without a space, such as a list of
+    // user names run together, only happens to contain a problem word.
     const looksLikeProblem =
-      MESSAGE_ROLES.has(element.role) && PROBLEM_WORDS.test(text);
+      MESSAGE_ROLES.has(element.role) &&
+      /\s/.test(text) &&
+      PROBLEM_WORDS.test(text);
 
     if (!isAlert && !looksLikeProblem) {
       continue;

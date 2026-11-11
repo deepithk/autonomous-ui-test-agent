@@ -108,6 +108,19 @@ describe('findPageNotes', () => {
     ]);
   });
 
+  it('ignores run-together text that only happens to contain a problem word', () => {
+    const notes = findPageNotes(
+      parseSnapshot(
+        [
+          '- generic [ref=e1]: standard_userlocked_out_userproblem_user',
+          '- generic [ref=e2]: Epic sadface: this user has been locked out.'
+        ].join('\n')
+      )
+    );
+
+    expect(notes).toEqual(['Epic sadface: this user has been locked out.']);
+  });
+
   it('ignores ordinary page content', () => {
     expect(findPageNotes(parseSnapshot(INVENTORY_YAML))).toEqual([]);
   });

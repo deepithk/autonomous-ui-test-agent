@@ -133,6 +133,21 @@ describe('SemanticResolver', () => {
     expect(resolved.ref).toBe('e124');
   });
 
+  it('describes an unnamed element by the text it shows', async () => {
+    const { llm } = createLlm(
+      JSON.stringify({ ref: 'e53', reason: 'The price.' })
+    );
+
+    const resolved = await new SemanticResolver(llm).resolve(
+      target({ description: 'Price tag' }),
+      'observe',
+      elements,
+      INVENTORY_YAML
+    );
+
+    expect(resolved.element).toBe('generic "$29.99"');
+  });
+
   it('rejects a ref that is not in the snapshot', async () => {
     const { llm } = createLlm(
       JSON.stringify({ ref: 'e999', reason: 'Guess.' })
