@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-11T05:21:27.241Z",
+  "generatedAt": "2026-11-11T06:16:49.979Z",
   "planReportPath": "reports\\test-plan-issue-1-2026-11-11T02-55-44-828Z.json",
-  "executionLogPath": "logs\\test-execution-2026-11-11T05-20-46-600Z.log",
+  "executionLogPath": "logs\\test-execution-2026-11-11T06-15-59-282Z.log",
   "llmUsage": {
     "requests": 7,
     "reused": 3
@@ -85,6 +85,7 @@
       "assertionsTotal": 2
     }
   ],
+  "failures": [],
   "scenarios": [
     {
       "scenarioId": "SC-001",
@@ -97,12 +98,12 @@
         {
           "stepId": "STEP-01",
           "status": "passed",
-          "durationMs": 3701
+          "durationMs": 3933
         },
         {
           "stepId": "STEP-02",
           "status": "passed",
-          "durationMs": 50,
+          "durationMs": 53,
           "resolution": {
             "method": "deterministic",
             "element": "textbox \"Username\"",
@@ -113,7 +114,7 @@
         {
           "stepId": "STEP-03",
           "status": "passed",
-          "durationMs": 21,
+          "durationMs": 29,
           "resolution": {
             "method": "deterministic",
             "element": "textbox \"Password\"",
@@ -124,7 +125,7 @@
         {
           "stepId": "STEP-04",
           "status": "passed",
-          "durationMs": 1199,
+          "durationMs": 1131,
           "resolution": {
             "method": "deterministic",
             "element": "button \"Login\"",
@@ -144,17 +145,32 @@
           "expected": "https://www.saucedemo.com/inventory.html",
           "actual": "https://www.saucedemo.com/inventory.html",
           "explanation": "Verify that user is redirected to the products inventory page after clicking login.",
-          "durationMs": 10
+          "durationMs": 11
         }
       ],
       "screenshots": [
         {
+          "stepId": "STEP-01",
+          "reason": "step",
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-001_STEP-01_step.png"
+        },
+        {
+          "stepId": "STEP-02",
+          "reason": "step",
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-001_STEP-02_step.png"
+        },
+        {
+          "stepId": "STEP-03",
+          "reason": "step",
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-001_STEP-03_step.png"
+        },
+        {
           "stepId": "STEP-04",
           "reason": "checkpoint",
-          "path": "screenshots\\2026-11-11T05-20-46-600Z\\SC-001_STEP-04_checkpoint.png"
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-001_STEP-04_checkpoint.png"
         }
       ],
-      "durationMs": 10084
+      "durationMs": 8222
     },
     {
       "scenarioId": "SC-002",
@@ -168,136 +184,12 @@
         {
           "stepId": "STEP-01",
           "status": "passed",
-          "durationMs": 3300
+          "durationMs": 3094
         },
         {
           "stepId": "STEP-02",
           "status": "passed",
-          "durationMs": 50,
-          "resolution": {
-            "method": "deterministic",
-            "element": "textbox \"Username\"",
-            "ref": "e11",
-            "reason": "Exactly one element matched the plan fields."
-          }
-        },
-        {
-          "stepId": "STEP-03",
-          "status": "passed",
-          "durationMs": 22,
-          "resolution": {
-            "method": "deterministic",
-            "element": "textbox \"Password\"",
-            "ref": "e13",
-            "reason": "Exactly one element matched the plan fields."
-          }
-        },
-        {
-          "stepId": "STEP-04",
-          "status": "passed",
-          "durationMs": 1133,
-          "resolution": {
-            "method": "deterministic",
-            "element": "button \"Login\"",
-            "ref": "e15",
-            "reason": "Exactly one element matched the plan fields."
-          }
-        },
-        {
-          "stepId": "STEP-05",
-          "status": "passed",
-          "durationMs": 4394,
-          "resolution": {
-            "method": "llm",
-            "element": "button \"View details for Sauce Labs Backpack\"",
-            "ref": "e49",
-            "reason": "Element e49 is the button containing the title of the first product on the inventory list, Sauce Labs Backpack."
-          },
-          "captured": {
-            "key": "selectedProductName",
-            "value": "Sauce Labs Backpack"
-          }
-        },
-        {
-          "stepId": "STEP-06",
-          "status": "passed",
-          "durationMs": 2198,
-          "resolution": {
-            "method": "llm",
-            "element": "generic",
-            "ref": "e53",
-            "reason": "The element with ref e53 contains the price text '$29.99' for the Sauce Labs Backpack."
-          },
-          "captured": {
-            "key": "selectedProductPrice",
-            "value": "$29.99"
-          }
-        },
-        {
-          "stepId": "STEP-07",
-          "status": "passed",
-          "durationMs": 2376,
-          "resolution": {
-            "method": "llm",
-            "element": "button \"Add to cart\"",
-            "ref": "e54",
-            "reason": "The button with ref e54 is the Add to cart button located under the Sauce Labs Backpack product details."
-          }
-        }
-      ],
-      "skippedStepIds": [],
-      "assertions": [
-        {
-          "assertionId": "ASSERT-02",
-          "acceptanceCriterionId": "AC-02",
-          "afterStepId": "STEP-07",
-          "type": "text",
-          "status": "passed",
-          "expected": "Remove",
-          "actual": "Remove",
-          "explanation": "Verify product addition state by checking that the Add to cart button turns into Remove.",
-          "durationMs": 2336
-        },
-        {
-          "assertionId": "ASSERT-03",
-          "acceptanceCriterionId": "AC-03",
-          "afterStepId": "STEP-07",
-          "type": "text",
-          "status": "passed",
-          "expected": "1",
-          "actual": "1",
-          "explanation": "Verify that the shopping cart badge shows '1' after adding one product.",
-          "durationMs": 2336
-        }
-      ],
-      "screenshots": [
-        {
-          "stepId": "STEP-07",
-          "reason": "checkpoint",
-          "path": "screenshots\\2026-11-11T05-20-46-600Z\\SC-002_STEP-07_checkpoint.png"
-        }
-      ],
-      "durationMs": 16576
-    },
-    {
-      "scenarioId": "SC-003",
-      "title": "Verify cart contents and remove product from cart",
-      "acceptanceCriterionIds": [
-        "AC-04",
-        "AC-05",
-        "AC-06"
-      ],
-      "status": "passed",
-      "steps": [
-        {
-          "stepId": "STEP-01",
-          "status": "passed",
-          "durationMs": 2375
-        },
-        {
-          "stepId": "STEP-02",
-          "status": "passed",
-          "durationMs": 46,
+          "durationMs": 49,
           "resolution": {
             "method": "deterministic",
             "element": "textbox \"Username\"",
@@ -319,7 +211,7 @@
         {
           "stepId": "STEP-04",
           "status": "passed",
-          "durationMs": 1123,
+          "durationMs": 1236,
           "resolution": {
             "method": "deterministic",
             "element": "button \"Login\"",
@@ -330,7 +222,167 @@
         {
           "stepId": "STEP-05",
           "status": "passed",
-          "durationMs": 9,
+          "durationMs": 2418,
+          "resolution": {
+            "method": "llm",
+            "element": "button \"View details for Sauce Labs Backpack\"",
+            "ref": "e49",
+            "reason": "Element e49 is the button containing the title of the first product on the inventory list, Sauce Labs Backpack."
+          },
+          "captured": {
+            "key": "selectedProductName",
+            "value": "Sauce Labs Backpack"
+          }
+        },
+        {
+          "stepId": "STEP-06",
+          "status": "passed",
+          "durationMs": 3183,
+          "resolution": {
+            "method": "llm",
+            "element": "generic \"$29.99\"",
+            "ref": "e53",
+            "reason": "Element e53 contains the price text '$29.99' for the Sauce Labs Backpack."
+          },
+          "captured": {
+            "key": "selectedProductPrice",
+            "value": "$29.99"
+          }
+        },
+        {
+          "stepId": "STEP-07",
+          "status": "passed",
+          "durationMs": 3955,
+          "resolution": {
+            "method": "llm",
+            "element": "button \"Add to cart\"",
+            "ref": "e54",
+            "reason": "The button with ref e54 is the Add to cart button located under the Sauce Labs Backpack product."
+          }
+        }
+      ],
+      "skippedStepIds": [],
+      "assertions": [
+        {
+          "assertionId": "ASSERT-02",
+          "acceptanceCriterionId": "AC-02",
+          "afterStepId": "STEP-07",
+          "type": "text",
+          "status": "passed",
+          "expected": "Remove",
+          "actual": "Remove",
+          "explanation": "Verify product addition state by checking that the Add to cart button turns into Remove.",
+          "durationMs": 2444,
+          "matched": [
+            "button \"Remove\""
+          ]
+        },
+        {
+          "assertionId": "ASSERT-03",
+          "acceptanceCriterionId": "AC-03",
+          "afterStepId": "STEP-07",
+          "type": "text",
+          "status": "passed",
+          "expected": "1",
+          "actual": "1",
+          "explanation": "Verify that the shopping cart badge shows '1' after adding one product.",
+          "durationMs": 2444,
+          "matched": [
+            "generic \"1\""
+          ]
+        }
+      ],
+      "screenshots": [
+        {
+          "stepId": "STEP-01",
+          "reason": "step",
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-002_STEP-01_step.png"
+        },
+        {
+          "stepId": "STEP-02",
+          "reason": "step",
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-002_STEP-02_step.png"
+        },
+        {
+          "stepId": "STEP-03",
+          "reason": "step",
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-002_STEP-03_step.png"
+        },
+        {
+          "stepId": "STEP-04",
+          "reason": "step",
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-002_STEP-04_step.png"
+        },
+        {
+          "stepId": "STEP-05",
+          "reason": "step",
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-002_STEP-05_step.png"
+        },
+        {
+          "stepId": "STEP-06",
+          "reason": "step",
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-002_STEP-06_step.png"
+        },
+        {
+          "stepId": "STEP-07",
+          "reason": "checkpoint",
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-002_STEP-07_checkpoint.png"
+        }
+      ],
+      "durationMs": 22948
+    },
+    {
+      "scenarioId": "SC-003",
+      "title": "Verify cart contents and remove product from cart",
+      "acceptanceCriterionIds": [
+        "AC-04",
+        "AC-05",
+        "AC-06"
+      ],
+      "status": "passed",
+      "steps": [
+        {
+          "stepId": "STEP-01",
+          "status": "passed",
+          "durationMs": 2684
+        },
+        {
+          "stepId": "STEP-02",
+          "status": "passed",
+          "durationMs": 40,
+          "resolution": {
+            "method": "deterministic",
+            "element": "textbox \"Username\"",
+            "ref": "e11",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-03",
+          "status": "passed",
+          "durationMs": 26,
+          "resolution": {
+            "method": "deterministic",
+            "element": "textbox \"Password\"",
+            "ref": "e13",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-04",
+          "status": "passed",
+          "durationMs": 1140,
+          "resolution": {
+            "method": "deterministic",
+            "element": "button \"Login\"",
+            "ref": "e15",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-05",
+          "status": "passed",
+          "durationMs": 14,
           "resolution": {
             "method": "llm",
             "element": "button \"View details for Sauce Labs Backpack\"",
@@ -346,12 +398,12 @@
         {
           "stepId": "STEP-06",
           "status": "passed",
-          "durationMs": 12,
+          "durationMs": 10,
           "resolution": {
             "method": "llm",
-            "element": "generic",
+            "element": "generic \"$29.99\"",
             "ref": "e53",
-            "reason": "The element with ref e53 contains the price text '$29.99' for the Sauce Labs Backpack.",
+            "reason": "Element e53 contains the price text '$29.99' for the Sauce Labs Backpack.",
             "cached": true
           },
           "captured": {
@@ -362,19 +414,19 @@
         {
           "stepId": "STEP-07",
           "status": "passed",
-          "durationMs": 548,
+          "durationMs": 567,
           "resolution": {
             "method": "llm",
             "element": "button \"Add to cart\"",
             "ref": "e54",
-            "reason": "The button with ref e54 is the Add to cart button located under the Sauce Labs Backpack product details.",
+            "reason": "The button with ref e54 is the Add to cart button located under the Sauce Labs Backpack product.",
             "cached": true
           }
         },
         {
           "stepId": "STEP-08",
           "status": "passed",
-          "durationMs": 2370,
+          "durationMs": 4205,
           "resolution": {
             "method": "llm",
             "element": "button \"Cart, 1 items\"",
@@ -385,7 +437,7 @@
         {
           "stepId": "STEP-09",
           "status": "passed",
-          "durationMs": 585,
+          "durationMs": 576,
           "resolution": {
             "method": "deterministic",
             "element": "button \"Remove\"",
@@ -405,7 +457,10 @@
           "expected": "Sauce Labs Backpack",
           "actual": "Sauce Labs Backpack",
           "explanation": "Verify cart displays correct product name.",
-          "durationMs": 2946
+          "durationMs": 2613,
+          "matched": [
+            "generic \"Sauce Labs Backpack\""
+          ]
         },
         {
           "assertionId": "ASSERT-05",
@@ -416,7 +471,10 @@
           "expected": "1",
           "actual": "1",
           "explanation": "Verify cart displays quantity of 1 for the selected product.",
-          "durationMs": 2946
+          "durationMs": 2613,
+          "matched": [
+            "generic \"1\""
+          ]
         },
         {
           "assertionId": "ASSERT-06",
@@ -427,7 +485,10 @@
           "expected": "$29.99",
           "actual": "$29.99",
           "explanation": "Verify cart displays correct product price.",
-          "durationMs": 2946
+          "durationMs": 2613,
+          "matched": [
+            "generic \"$29.99\""
+          ]
         },
         {
           "assertionId": "ASSERT-07",
@@ -438,7 +499,8 @@
           "expected": "0",
           "actual": "0",
           "explanation": "Verify that the specific selected product is absent from the shopping cart after removal.",
-          "durationMs": 1381
+          "durationMs": 1316,
+          "matched": []
         },
         {
           "assertionId": "ASSERT-08",
@@ -449,7 +511,8 @@
           "expected": "0",
           "actual": "0",
           "explanation": "Verify that the entire shopping cart contains zero products.",
-          "durationMs": 1381
+          "durationMs": 1316,
+          "matched": []
         },
         {
           "assertionId": "ASSERT-09",
@@ -460,22 +523,58 @@
           "expected": "0",
           "actual": "0",
           "explanation": "Verify that the shopping cart badge is absent when cart is empty.",
-          "durationMs": 1381
+          "durationMs": 1316,
+          "matched": []
         }
       ],
       "screenshots": [
         {
+          "stepId": "STEP-01",
+          "reason": "step",
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-003_STEP-01_step.png"
+        },
+        {
+          "stepId": "STEP-02",
+          "reason": "step",
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-003_STEP-02_step.png"
+        },
+        {
+          "stepId": "STEP-03",
+          "reason": "step",
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-003_STEP-03_step.png"
+        },
+        {
+          "stepId": "STEP-04",
+          "reason": "step",
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-003_STEP-04_step.png"
+        },
+        {
+          "stepId": "STEP-05",
+          "reason": "step",
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-003_STEP-05_step.png"
+        },
+        {
+          "stepId": "STEP-06",
+          "reason": "step",
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-003_STEP-06_step.png"
+        },
+        {
+          "stepId": "STEP-07",
+          "reason": "step",
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-003_STEP-07_step.png"
+        },
+        {
           "stepId": "STEP-08",
           "reason": "checkpoint",
-          "path": "screenshots\\2026-11-11T05-20-46-600Z\\SC-003_STEP-08_checkpoint.png"
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-003_STEP-08_checkpoint.png"
         },
         {
           "stepId": "STEP-09",
           "reason": "checkpoint",
-          "path": "screenshots\\2026-11-11T05-20-46-600Z\\SC-003_STEP-09_checkpoint.png"
+          "path": "screenshots\\2026-11-11T06-15-59-282Z\\SC-003_STEP-09_checkpoint.png"
         }
       ],
-      "durationMs": 13963
+      "durationMs": 19511
     }
   ]
 }

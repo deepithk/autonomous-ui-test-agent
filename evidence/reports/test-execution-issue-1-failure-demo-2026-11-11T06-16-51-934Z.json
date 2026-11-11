@@ -1,0 +1,536 @@
+{
+  "generatedAt": "2026-11-11T06:17:57.233Z",
+  "planReportPath": "reports\\test-plan-issue-1-2026-11-11T02-55-44-828Z.json",
+  "executionLogPath": "logs\\test-execution-failure-demo-2026-11-11T06-16-51-934Z.log",
+  "llmUsage": {
+    "requests": 6,
+    "reused": 0
+  },
+  "source": {
+    "repository": "deepithk/autonomous-ui-test-agent",
+    "issueNumber": 1,
+    "issueTitle": "Feature: Add and Remove Products from Shopping Cart",
+    "issueUrl": "https://github.com/deepithk/autonomous-ui-test-agent/issues/1",
+    "projectTitle": "Autonomous UI QA Board",
+    "projectStatus": "RFQA",
+    "projectStatusSource": "project-v2"
+  },
+  "planningLlm": {
+    "provider": "gemini",
+    "model": "gemini-3.6-flash"
+  },
+  "executionLlm": {
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite"
+  },
+  "verdict": "FAILED",
+  "summary": {
+    "scenarios": {
+      "passed": 0,
+      "failed": 3,
+      "error": 0
+    },
+    "steps": {
+      "passed": 12,
+      "failed": 2,
+      "skipped": 6
+    },
+    "assertions": {
+      "passed": 0,
+      "failed": 1,
+      "error": 8
+    }
+  },
+  "criteria": [
+    {
+      "id": "AC-01",
+      "title": "Successful Login",
+      "verdict": "FAILED",
+      "assertionsPassed": 0,
+      "assertionsTotal": 1
+    },
+    {
+      "id": "AC-02",
+      "title": "Add Product to Cart",
+      "verdict": "ERROR",
+      "assertionsPassed": 0,
+      "assertionsTotal": 1
+    },
+    {
+      "id": "AC-03",
+      "title": "Update Cart Count",
+      "verdict": "ERROR",
+      "assertionsPassed": 0,
+      "assertionsTotal": 1
+    },
+    {
+      "id": "AC-04",
+      "title": "Verify Cart Contents",
+      "verdict": "ERROR",
+      "assertionsPassed": 0,
+      "assertionsTotal": 3
+    },
+    {
+      "id": "AC-05",
+      "title": "Remove Product",
+      "verdict": "ERROR",
+      "assertionsPassed": 0,
+      "assertionsTotal": 1
+    },
+    {
+      "id": "AC-06",
+      "title": "Verify Empty Cart",
+      "verdict": "ERROR",
+      "assertionsPassed": 0,
+      "assertionsTotal": 2
+    }
+  ],
+  "failures": [
+    {
+      "scenarioId": "SC-001",
+      "title": "Verify successful login",
+      "category": "application",
+      "summary": "ASSERT-01 (AC-01) expected \"https://www.saucedemo.com/inventory.html\" but the page showed \"https://www.saucedemo.com/\"",
+      "advice": "The page was checked and does not match the acceptance criterion AC-01. If the messages on the page explain it, fix the cause; otherwise compare the screenshot with the criterion.",
+      "criterionIds": [
+        "AC-01"
+      ],
+      "stepId": "STEP-04",
+      "expected": "https://www.saucedemo.com/inventory.html",
+      "actual": "https://www.saucedemo.com/",
+      "pageUrl": "https://www.saucedemo.com/",
+      "pageNotes": [
+        "Epic sadface: Sorry, this user has been locked out."
+      ],
+      "screenshots": [
+        "screenshots\\failure-demo-2026-11-11T06-16-51-934Z\\SC-001_STEP-04_checkpoint.png"
+      ]
+    },
+    {
+      "scenarioId": "SC-002",
+      "title": "Add product to shopping cart and verify badge update",
+      "category": "automation",
+      "summary": "STEP-05 failed: No element matched \"First product title on inventory list\": The inventory list and its products are not visible in the accessibility snapshot because the user is still on the login page with a locked ...",
+      "advice": "The element the plan describes was not found on the page. Look at the screenshot and the page notes: the UI may have changed, or an earlier step may have left the page in an unexpected state.",
+      "criterionIds": [
+        "AC-02",
+        "AC-03"
+      ],
+      "stepId": "STEP-05",
+      "pageUrl": "https://www.saucedemo.com/",
+      "pageNotes": [
+        "Epic sadface: Sorry, this user has been locked out."
+      ],
+      "screenshots": [
+        "screenshots\\failure-demo-2026-11-11T06-16-51-934Z\\SC-002_STEP-05_failure.png"
+      ]
+    },
+    {
+      "scenarioId": "SC-003",
+      "title": "Verify cart contents and remove product from cart",
+      "category": "automation",
+      "summary": "STEP-05 failed: No element matched \"First product title on inventory list\": The inventory list is not present in the current view because the login failed due to a locked-out user.",
+      "advice": "The element the plan describes was not found on the page. Look at the screenshot and the page notes: the UI may have changed, or an earlier step may have left the page in an unexpected state.",
+      "criterionIds": [
+        "AC-04",
+        "AC-05",
+        "AC-06"
+      ],
+      "stepId": "STEP-05",
+      "pageUrl": "https://www.saucedemo.com/",
+      "pageNotes": [
+        "Epic sadface: Sorry, this user has been locked out."
+      ],
+      "screenshots": [
+        "screenshots\\failure-demo-2026-11-11T06-16-51-934Z\\SC-003_STEP-05_failure.png"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "scenarioId": "SC-001",
+      "title": "Verify successful login",
+      "acceptanceCriterionIds": [
+        "AC-01"
+      ],
+      "status": "failed",
+      "steps": [
+        {
+          "stepId": "STEP-01",
+          "status": "passed",
+          "durationMs": 2722
+        },
+        {
+          "stepId": "STEP-02",
+          "status": "passed",
+          "durationMs": 52,
+          "resolution": {
+            "method": "deterministic",
+            "element": "textbox \"Username\"",
+            "ref": "e11",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-03",
+          "status": "passed",
+          "durationMs": 27,
+          "resolution": {
+            "method": "deterministic",
+            "element": "textbox \"Password\"",
+            "ref": "e13",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-04",
+          "status": "passed",
+          "durationMs": 6135,
+          "resolution": {
+            "method": "deterministic",
+            "element": "button \"Login\"",
+            "ref": "e15",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        }
+      ],
+      "skippedStepIds": [],
+      "assertions": [
+        {
+          "assertionId": "ASSERT-01",
+          "acceptanceCriterionId": "AC-01",
+          "afterStepId": "STEP-04",
+          "type": "url",
+          "status": "failed",
+          "expected": "https://www.saucedemo.com/inventory.html",
+          "actual": "https://www.saucedemo.com/",
+          "explanation": "Verify that user is redirected to the products inventory page after clicking login.",
+          "durationMs": 2090
+        }
+      ],
+      "screenshots": [
+        {
+          "stepId": "STEP-01",
+          "reason": "step",
+          "path": "screenshots\\failure-demo-2026-11-11T06-16-51-934Z\\SC-001_STEP-01_step.png"
+        },
+        {
+          "stepId": "STEP-02",
+          "reason": "step",
+          "path": "screenshots\\failure-demo-2026-11-11T06-16-51-934Z\\SC-001_STEP-02_step.png"
+        },
+        {
+          "stepId": "STEP-03",
+          "reason": "step",
+          "path": "screenshots\\failure-demo-2026-11-11T06-16-51-934Z\\SC-001_STEP-03_step.png"
+        },
+        {
+          "stepId": "STEP-04",
+          "reason": "checkpoint",
+          "path": "screenshots\\failure-demo-2026-11-11T06-16-51-934Z\\SC-001_STEP-04_checkpoint.png"
+        }
+      ],
+      "durationMs": 16682,
+      "failureContext": {
+        "stepId": "STEP-04",
+        "url": "https://www.saucedemo.com/",
+        "notes": [
+          "Epic sadface: Sorry, this user has been locked out."
+        ]
+      }
+    },
+    {
+      "scenarioId": "SC-002",
+      "title": "Add product to shopping cart and verify badge update",
+      "acceptanceCriterionIds": [
+        "AC-02",
+        "AC-03"
+      ],
+      "status": "failed",
+      "steps": [
+        {
+          "stepId": "STEP-01",
+          "status": "passed",
+          "durationMs": 2509
+        },
+        {
+          "stepId": "STEP-02",
+          "status": "passed",
+          "durationMs": 53,
+          "resolution": {
+            "method": "deterministic",
+            "element": "textbox \"Username\"",
+            "ref": "e11",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-03",
+          "status": "passed",
+          "durationMs": 36,
+          "resolution": {
+            "method": "deterministic",
+            "element": "textbox \"Password\"",
+            "ref": "e13",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-04",
+          "status": "passed",
+          "durationMs": 6141,
+          "resolution": {
+            "method": "deterministic",
+            "element": "button \"Login\"",
+            "ref": "e15",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-05",
+          "status": "failed",
+          "durationMs": 14315,
+          "error": "No element matched \"First product title on inventory list\": The inventory list and its products are not visible in the accessibility snapshot because the user is still on the login page with a locked out error."
+        }
+      ],
+      "skippedStepIds": [
+        "STEP-06",
+        "STEP-07"
+      ],
+      "assertions": [
+        {
+          "assertionId": "ASSERT-02",
+          "acceptanceCriterionId": "AC-02",
+          "afterStepId": "STEP-07",
+          "type": "text",
+          "status": "error",
+          "expected": "Remove",
+          "actual": "",
+          "explanation": "Verify product addition state by checking that the Add to cart button turns into Remove.",
+          "durationMs": 0,
+          "error": "Not evaluated: STEP-05 failed."
+        },
+        {
+          "assertionId": "ASSERT-03",
+          "acceptanceCriterionId": "AC-03",
+          "afterStepId": "STEP-07",
+          "type": "text",
+          "status": "error",
+          "expected": "1",
+          "actual": "",
+          "explanation": "Verify that the shopping cart badge shows '1' after adding one product.",
+          "durationMs": 0,
+          "error": "Not evaluated: STEP-05 failed."
+        }
+      ],
+      "screenshots": [
+        {
+          "stepId": "STEP-01",
+          "reason": "step",
+          "path": "screenshots\\failure-demo-2026-11-11T06-16-51-934Z\\SC-002_STEP-01_step.png"
+        },
+        {
+          "stepId": "STEP-02",
+          "reason": "step",
+          "path": "screenshots\\failure-demo-2026-11-11T06-16-51-934Z\\SC-002_STEP-02_step.png"
+        },
+        {
+          "stepId": "STEP-03",
+          "reason": "step",
+          "path": "screenshots\\failure-demo-2026-11-11T06-16-51-934Z\\SC-002_STEP-03_step.png"
+        },
+        {
+          "stepId": "STEP-04",
+          "reason": "step",
+          "path": "screenshots\\failure-demo-2026-11-11T06-16-51-934Z\\SC-002_STEP-04_step.png"
+        },
+        {
+          "stepId": "STEP-05",
+          "reason": "failure",
+          "path": "screenshots\\failure-demo-2026-11-11T06-16-51-934Z\\SC-002_STEP-05_failure.png"
+        }
+      ],
+      "durationMs": 29920,
+      "failureContext": {
+        "stepId": "STEP-05",
+        "url": "https://www.saucedemo.com/",
+        "notes": [
+          "Epic sadface: Sorry, this user has been locked out."
+        ]
+      },
+      "error": "STEP-05 failed: No element matched \"First product title on inventory list\": The inventory list and its products are not visible in the accessibility snapshot because the user is still on the login page with a locked out error."
+    },
+    {
+      "scenarioId": "SC-003",
+      "title": "Verify cart contents and remove product from cart",
+      "acceptanceCriterionIds": [
+        "AC-04",
+        "AC-05",
+        "AC-06"
+      ],
+      "status": "failed",
+      "steps": [
+        {
+          "stepId": "STEP-01",
+          "status": "passed",
+          "durationMs": 3504
+        },
+        {
+          "stepId": "STEP-02",
+          "status": "passed",
+          "durationMs": 44,
+          "resolution": {
+            "method": "deterministic",
+            "element": "textbox \"Username\"",
+            "ref": "e11",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-03",
+          "status": "passed",
+          "durationMs": 28,
+          "resolution": {
+            "method": "deterministic",
+            "element": "textbox \"Password\"",
+            "ref": "e13",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-04",
+          "status": "passed",
+          "durationMs": 6123,
+          "resolution": {
+            "method": "deterministic",
+            "element": "button \"Login\"",
+            "ref": "e15",
+            "reason": "Exactly one element matched the plan fields."
+          }
+        },
+        {
+          "stepId": "STEP-05",
+          "status": "failed",
+          "durationMs": 5708,
+          "error": "No element matched \"First product title on inventory list\": The inventory list is not present in the current view because the login failed due to a locked-out user."
+        }
+      ],
+      "skippedStepIds": [
+        "STEP-06",
+        "STEP-07",
+        "STEP-08",
+        "STEP-09"
+      ],
+      "assertions": [
+        {
+          "assertionId": "ASSERT-04",
+          "acceptanceCriterionId": "AC-04",
+          "afterStepId": "STEP-08",
+          "type": "text",
+          "status": "error",
+          "expected": "{{capture.selectedProductName}}",
+          "actual": "",
+          "explanation": "Verify cart displays correct product name.",
+          "durationMs": 0,
+          "error": "Not evaluated: STEP-05 failed."
+        },
+        {
+          "assertionId": "ASSERT-05",
+          "acceptanceCriterionId": "AC-04",
+          "afterStepId": "STEP-08",
+          "type": "text",
+          "status": "error",
+          "expected": "1",
+          "actual": "",
+          "explanation": "Verify cart displays quantity of 1 for the selected product.",
+          "durationMs": 0,
+          "error": "Not evaluated: STEP-05 failed."
+        },
+        {
+          "assertionId": "ASSERT-06",
+          "acceptanceCriterionId": "AC-04",
+          "afterStepId": "STEP-08",
+          "type": "text",
+          "status": "error",
+          "expected": "{{capture.selectedProductPrice}}",
+          "actual": "",
+          "explanation": "Verify cart displays correct product price.",
+          "durationMs": 0,
+          "error": "Not evaluated: STEP-05 failed."
+        },
+        {
+          "assertionId": "ASSERT-07",
+          "acceptanceCriterionId": "AC-05",
+          "afterStepId": "STEP-09",
+          "type": "element_count",
+          "status": "error",
+          "expected": "0",
+          "actual": "",
+          "explanation": "Verify that the specific selected product is absent from the shopping cart after removal.",
+          "durationMs": 0,
+          "error": "Not evaluated: STEP-05 failed."
+        },
+        {
+          "assertionId": "ASSERT-08",
+          "acceptanceCriterionId": "AC-06",
+          "afterStepId": "STEP-09",
+          "type": "element_count",
+          "status": "error",
+          "expected": "0",
+          "actual": "",
+          "explanation": "Verify that the entire shopping cart contains zero products.",
+          "durationMs": 0,
+          "error": "Not evaluated: STEP-05 failed."
+        },
+        {
+          "assertionId": "ASSERT-09",
+          "acceptanceCriterionId": "AC-06",
+          "afterStepId": "STEP-09",
+          "type": "element_count",
+          "status": "error",
+          "expected": "0",
+          "actual": "",
+          "explanation": "Verify that the shopping cart badge is absent when cart is empty.",
+          "durationMs": 0,
+          "error": "Not evaluated: STEP-05 failed."
+        }
+      ],
+      "screenshots": [
+        {
+          "stepId": "STEP-01",
+          "reason": "step",
+          "path": "screenshots\\failure-demo-2026-11-11T06-16-51-934Z\\SC-003_STEP-01_step.png"
+        },
+        {
+          "stepId": "STEP-02",
+          "reason": "step",
+          "path": "screenshots\\failure-demo-2026-11-11T06-16-51-934Z\\SC-003_STEP-02_step.png"
+        },
+        {
+          "stepId": "STEP-03",
+          "reason": "step",
+          "path": "screenshots\\failure-demo-2026-11-11T06-16-51-934Z\\SC-003_STEP-03_step.png"
+        },
+        {
+          "stepId": "STEP-04",
+          "reason": "step",
+          "path": "screenshots\\failure-demo-2026-11-11T06-16-51-934Z\\SC-003_STEP-04_step.png"
+        },
+        {
+          "stepId": "STEP-05",
+          "reason": "failure",
+          "path": "screenshots\\failure-demo-2026-11-11T06-16-51-934Z\\SC-003_STEP-05_failure.png"
+        }
+      ],
+      "durationMs": 18684,
+      "failureContext": {
+        "stepId": "STEP-05",
+        "url": "https://www.saucedemo.com/",
+        "notes": [
+          "Epic sadface: Sorry, this user has been locked out."
+        ]
+      },
+      "error": "STEP-05 failed: No element matched \"First product title on inventory list\": The inventory list is not present in the current view because the login failed due to a locked-out user."
+    }
+  ]
+}

@@ -19,29 +19,129 @@ All six acceptance criteria passed in the most recent run (LLM: Gemini Flash-Lit
 
 Evidence for that run:
 
-- [Report](evidence/reports/test-execution-issue-1-2026-11-11T05-20-46-600Z.md) (expected and actual value for every assertion)
-- [Execution log](evidence/logs/test-execution-2026-11-11T05-20-46-600Z.log) (every step, how its element was found, every assertion)
-- [Screenshots](evidence/screenshots/2026-11-11T05-20-46-600Z/) taken at each assertion checkpoint
+- [Report](evidence/reports/test-execution-issue-1-2026-11-11T06-15-59-282Z.md) (expected and actual value for every assertion)
+- [Execution log](evidence/logs/test-execution-2026-11-11T06-15-59-282Z.log) (every step, how its element was found and why, every assertion)
+- [Screenshots](evidence/screenshots/2026-11-11T06-15-59-282Z/) (one after every step)
 
 This run made 7 LLM requests, with 3 more answers reused.
 
-Design documents: [TEST_PLAN.md](TEST_PLAN.md) and [SCENARIOS.md](SCENARIOS.md).
+### What a failure looks like
+
+A second run shows how the agent reports a failing test. It used the SauceDemo account `locked_out_user`, which cannot log in, so the acceptance criteria cannot be met:
+
+- [Failure report](evidence/reports/test-execution-issue-1-failure-demo-2026-11-11T06-16-51-934Z.md), with a **Failure details** section that says what happened, what the page showed, and what to do
+- [Failure log](evidence/logs/test-execution-failure-demo-2026-11-11T06-16-51-934Z.log)
+- [Screenshots](evidence/screenshots/failure-demo-2026-11-11T06-16-51-934Z/)
+
+Design documents: [TEST_PLAN.md](TEST_PLAN.md) (architecture, prompt strategy, guardrails) and [SCENARIOS.md](SCENARIOS.md) (acceptance criteria and scenarios).
+
+## Quick start (about 5 minutes, no GitHub needed)
+
+You need Node.js 20 or newer, npm, Git, and an API key for Gemini or Anthropic (see [Getting an API key](#getting-an-api-key)). The repository already contains a generated test plan, so you can run the agent without a GitHub token or project board.
+
+```bash
+git clone https://github.com/deepithk/autonomous-ui-test-agent.git
+cd autonomous-ui-test-agent
+npm ci
+npx playwright install chromium
+```
+
+Create your settings file. Everything is pre-filled for the public SauceDemo site except the API key:
+
+```bash
+cp .env.example .env
+```
+
+On Windows PowerShell use `Copy-Item .env.example .env` instead.
+
+Open `.env` and set `LLM_API_KEY` (and `LLM_PROVIDER` and `LLM_MODEL` if you do not use Gemini). Then check the settings and run:
+
+```bash
+npm run check:config
+npm run execute:plan
+```
+
+`check:config` is free: it makes no LLM, GitHub or browser requests. `execute:plan` runs the saved plan in a headless browser, prints what the agent is doing as it goes, and ends with a verdict for each acceptance criterion. It makes about 7 LLM requests and takes one to two minutes. The report, log and screenshots appear in `evidence/`.
+
+To see the browser while it runs, set `PLAYWRIGHT_MCP_HEADLESS=false` in `.env`.
+
+## Getting an API key
+
+The agent needs one LLM provider. Set these three values in `.env`:
+
+| Provider | Where to get a key | `LLM_PROVIDER` | Example `LLM_MODEL` |
+| --- | --- | --- | --- |
+| Gemini | [Google AI Studio](https://aistudio.google.com/apikey) (free tier available) | `gemini` | `gemini-3.5-flash-lite` |
+| Anthropic (Claude) | [Anthropic Console](https://console.anthropic.com/) (API keys page) | `anthropic` | `claude-sonnet-5-5` |
+
+```
+LLM_PROVIDER=gemini
+LLM_MODEL=gemini-3.5-flash-lite
+LLM_API_KEY=<your key>
+```
+
+Never commit `.env`; it is ignored by git. OpenAI is not built in. Adding another provider means implementing the small `ILLMProvider` interface in `src/planner/providers/`.
+
+## Planning from your own issue
+
+The quick start runs the plan that is already saved. To generate a new plan from an issue, use either source.
+
+**From a local file (no GitHub):** the file has the layout of a GitHub issue. [`fixtures/issue-1.md`](fixtures/issue-1.md) is the example.
+
+```bash
+npm run plan:issue -- --issue-file fixtures/issue-1.md
+```
+
+**From GitHub:** this also checks that the issue is in the "Ready for QA" (RFQA) state on a GitHub Projects (V2) board. Fill in the GitHub section of `.env`:
+
+| Setting | Meaning |
+| --- | --- |
+| `GITHUB_TOKEN` | A token that can read the repository's issues and the project |
+| `GITHUB_OWNER`, `GITHUB_REPO` | Where the issue lives |
+| `GITHUB_ISSUE_NUMBER` | The issue to test |
+| `GITHUB_PROJECT_NUMBER` | The project board number (a user project) |
+| `GITHUB_RFQA_STATUS_VALUE` | The Status value that means ready for QA (default `RFQA`) |
+| `GITHUB_RFQA_FALLBACK_LABEL` | If the board status cannot be read, accept an issue label instead |
+
+```bash
+npm run check:config -- --github
+npm run plan:issue
+```
+
+### How the issue must be written
+
+Acceptance criteria are read from headings of the form `### AC-01: Title`, followed by the criterion text. Any other heading ends the criterion. The ID must be unique and the text must not be empty, otherwise the agent stops with a clear message.
+
+```markdown
+## Acceptance Criteria
+
+### AC-01: Successful Login
+
+Given the user is on the login page,
+When valid credentials are entered,
+Then the products inventory page should be displayed.
+
+### AC-02: Add Product to Cart
+
+Given the user is on the products inventory page,
+When the user selects Add to cart for a product,
+Then the selected product should be added to the shopping cart.
+```
 
 ## How it works
 
 ```
-GitHub issue ──► Issue reader ──► LLM test planner ──► validated test plan
-                                                              │
-                                                              ▼
- evidence report ◄── scenario runner ◄── (fresh browser per scenario)
- + screenshots            │
-                          ├─ step executor ──► Playwright MCP (allow-listed tools)
-                          └─ assertion engine ─► checks the live page
+issue (GitHub or file) -> Issue reader -> LLM test planner -> validated plan (saved)
+                                                                   |
+                                                                   v
+ report + log + screenshots <- Scenario runner <- loads and re-validates the plan
+                                  |-- Step executor ----> Playwright MCP (allow-listed tools)
+                                  '-- Assertion engine -> checks the live page
 ```
 
-1. **Plan** (`npm run plan:issue`): reads the issue and its acceptance criteria from GitHub, checks it is ready for testing, asks the LLM for scenarios, and validates the plan with Zod and extra rules before saving it. Every criterion must be covered by at least one assertion.
-2. **Execute** (`npm run execute:plan`): loads the newest saved plan, validates it again, and runs each scenario in its own isolated browser. Steps run in order; assertions run right after the step they belong to, and a screenshot is saved as evidence.
-3. **Report**: writes a JSON and a Markdown report with a verdict per acceptance criterion and per assertion.
+1. **Plan** (`npm run plan:issue`): reads the issue and its acceptance criteria, asks the LLM for scenarios, and validates the plan with Zod and extra rules before saving it. Every criterion must be covered by at least one assertion.
+2. **Execute** (`npm run execute:plan`): loads the newest saved plan, validates it again, and runs each scenario in its own isolated browser. Steps run in order; assertions run right after the step they belong to, and a screenshot is saved after every step.
+3. **Report**: writes a JSON and a Markdown report with a verdict per acceptance criterion and per assertion, and an explanation of anything that did not pass.
 
 ### How the agent finds elements
 
@@ -51,6 +151,10 @@ The plan describes targets in plain words ("Add to cart button for the selected 
 - Otherwise the LLM picks the element from the snapshot. Its answer is only accepted if the element reference really exists in that snapshot.
 
 Values seen on the page (for example the first product's name and price) are captured and reused in later steps and assertions, so scenarios do not depend on a hard-coded product.
+
+### How the agent avoids made-up results
+
+The LLM never decides pass or fail. It only says where to look; the comparison with the expected value is done in code. See the prompt strategy in [TEST_PLAN.md](TEST_PLAN.md#9-prompt-engineering-loop-prevention-and-guardrails).
 
 ### Safety rules
 
@@ -62,56 +166,24 @@ Values seen on the page (for example the first product's name and price) are cap
 - Step count, scenario time and per-action time are limited (see configuration below).
 - Temporary LLM errors (such as "model is busy") are retried; quota errors are not, so a limit is never made worse.
 
-## Prerequisites
-
-- Node.js 24.22+ or 26.13+ (the repo enforces this with `engine-strict`).
-- npm and Git.
-- A GitHub token that can read the issue and its project.
-- An LLM API key for Gemini or Anthropic.
-- Windows 11+ or macOS 14+.
-
-## Setup
-
-```bash
-git clone https://github.com/deepithk/autonomous-ui-test-agent.git
-cd autonomous-ui-test-agent
-npm ci
-npx playwright install chromium
-```
-
-Create the local environment file and fill in the values:
-
-```bash
-cp .env.example .env
-```
-
-On Windows PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
 ## Configuration
 
 All settings live in `.env`. Never commit it.
 
-| Setting | Purpose |
-| --- | --- |
-| `LLM_PROVIDER` | `gemini` or `anthropic` |
-| `LLM_MODEL` | Model name for the chosen provider |
-| `LLM_API_KEY` | API key for the chosen provider |
-| `GITHUB_TOKEN`, `GITHUB_OWNER`, `GITHUB_REPO` | Where the issue lives |
-| `GITHUB_ISSUE_NUMBER`, `GITHUB_PROJECT_NUMBER` | Which issue and project board to read |
-| `GITHUB_RFQA_STATUS_VALUE` | Board status an issue must have to be tested (default `RFQA`) |
-| `GITHUB_RFQA_FALLBACK_LABEL` | Use an issue label if the board status cannot be read |
-| `TARGET_BASE_URL` | The web app to test, e.g. `https://www.saucedemo.com` |
-| `SAUCEDEMO_USERNAME`, `SAUCEDEMO_PASSWORD` | Login used by the scenarios |
-| `PLAYWRIGHT_MCP_HEADLESS` | `true` to hide the browser window |
-| `PLAYWRIGHT_MCP_CAPS` | Extra Playwright MCP capabilities (default `testing`) |
-| `MAX_STEPS_PER_SCENARIO` | Step limit per scenario (default 15) |
-| `SCENARIO_TIMEOUT_MS` | Time limit per scenario (default 60000) |
-| `ACTION_TIMEOUT_MS` | Time limit per browser action (default 10000) |
-| `MAX_ELEMENT_RECOVERY_ATTEMPTS` | Extra tries to find an element (default 2) |
+| Setting | Purpose | Needed for |
+| --- | --- | --- |
+| `LLM_PROVIDER` | `gemini` or `anthropic` | plan and execute |
+| `LLM_MODEL` | Model name for the chosen provider | plan and execute |
+| `LLM_API_KEY` | API key for the chosen provider | plan and execute |
+| `TARGET_BASE_URL` | The web app to test (`https://www.saucedemo.com`) | plan and execute |
+| `SAUCEDEMO_USERNAME`, `SAUCEDEMO_PASSWORD` | Login used by the scenarios (public demo account) | plan and execute |
+| `PLAYWRIGHT_MCP_HEADLESS` | `true` to hide the browser window | execute |
+| `PLAYWRIGHT_MCP_CAPS` | Extra Playwright MCP capabilities (default `testing`) | execute |
+| `MAX_STEPS_PER_SCENARIO` | Step limit per scenario (default 15) | execute |
+| `SCENARIO_TIMEOUT_MS` | Time limit per scenario, not counting time spent saving evidence (default 60000) | execute |
+| `ACTION_TIMEOUT_MS` | Time limit per browser action (default 10000) | execute |
+| `MAX_ELEMENT_RECOVERY_ATTEMPTS` | Extra tries to find an element or re-check an assertion (default 2) | execute |
+| `GITHUB_*` | See "Planning from your own issue" | only to plan from GitHub |
 
 ### Choosing an LLM
 
@@ -119,39 +191,23 @@ The same provider and model are used for planning and for finding elements.
 
 - A full execution makes about 7 LLM requests for this issue. The agent reuses an earlier answer only when the page and the question are exactly the same, and assertions checked at the same point share one request. The count is printed at the end of each run and saved in the report. Quotas are usually per model, so check the limits shown for your key.
 - Gemini Flash-Lite (`gemini-3.5-flash-lite`) produced the passing run shown above.
-- A larger model may locate elements more reliably. A smaller model can occasionally pick the wrong element, so spot-check the screenshots.
+- A larger model may locate elements more reliably. A smaller model can occasionally make a wrong choice, so the report lists which elements each assertion found and a screenshot is saved after every step.
 
 ## Usage
 
-Generate a test plan from the issue (uses the LLM, runs no browser):
-
 ```bash
-npm run plan:issue
+npm run check:config                          # validate .env, no requests made
+npm run check:config -- --github              # also validate the GitHub settings
+npm run plan:issue -- --issue-file <file>     # plan from a local issue file
+npm run plan:issue                            # plan from the GitHub issue
+npm run execute:plan                          # run the newest saved plan
+npm run execute:plan -- --plan <file>         # run a specific saved plan
+npm run execute:plan -- --label my-run        # put a label in the evidence file names
+npm run build                                 # type-check and compile
+npm test                                      # all unit tests (no network or browser)
 ```
 
-Execute the newest saved plan (uses the browser and the LLM):
-
-```bash
-npm run execute:plan
-```
-
-To run a specific saved plan:
-
-```bash
-npm run execute:plan -- --plan evidence/reports/test-plan-issue-1-<timestamp>.json
-```
-
-The command prints a verdict per acceptance criterion and exits with code 1 unless everything passed.
-
-Other commands:
-
-```bash
-npm run check:config # validate .env and create evidence folders (no LLM or browser use)
-npm run build        # type-check and compile
-npm test             # all unit tests
-```
-
-`check:config` is a free way to confirm `.env` is complete before spending LLM requests on a plan or an execution.
+`execute:plan` exits with code 1 unless every scenario passed.
 
 ### Reading the results
 
@@ -163,32 +219,50 @@ Each scenario ends as one of:
 
 If a step fails, the remaining steps are skipped and assertions that never ran are reported as "not evaluated", never as passes.
 
+Anything that did not pass is explained in the report's **Failure details** section: what kind of problem it is (the application, the agent, the LLM service, or a run limit), what happened, the page's URL and any error message it showed, and what to do next.
+
+### Trying a failure
+
+Use another SauceDemo account to see a failing run. `locked_out_user` cannot log in:
+
+```bash
+SAUCEDEMO_USERNAME=locked_out_user npm run execute:plan -- --label failure-demo
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:SAUCEDEMO_USERNAME = "locked_out_user"; npm run execute:plan -- --label failure-demo
+```
+
 ## Evidence
 
 Everything produced by a run goes in [`evidence/`](evidence/):
 
 - `evidence/reports/test-plan-issue-<n>-<time>.json`: the generated plan
 - `evidence/reports/test-execution-issue-<n>-<time>.json` and `.md`: the execution report
-- `evidence/logs/test-execution-<time>.log`: one line per step, assertion and screenshot, including how each element was found
-- `evidence/screenshots/<run>/`: screenshots per scenario and step
+- `evidence/logs/test-execution-<time>.log`: one line per step, assertion and screenshot, including how each element was found and the LLM's reason. The same lines are printed to the console while the run happens.
+- `evidence/screenshots/<run>/`: a screenshot after every step
 
 ## Project structure
 
 ```
 src/
   config/      settings validation, platform helpers
-  github/      issue reader and acceptance-criteria parser
+  github/      issue reader (GitHub or local file), acceptance-criteria parser
   planner/     LLM test planner, plan schema, Gemini and Anthropic providers
   executor/    browser session, step executor, assertion engine,
-               scenario runner, report workflow
+               scenario runner, failure analysis, report workflow
 tests/unit/    unit tests (no network and no browser needed)
-evidence/      plans, reports and screenshots
+fixtures/      an example issue
+evidence/      plans, reports, logs and screenshots
 ```
 
 ## Known limitations
 
-- When the LLM chooses an element, it can be wrong. The framework only accepts elements that exist on the page, but a wrong choice on a "nothing is there" check could still hide a problem, which is why screenshots are saved at every checkpoint.
+- When the LLM chooses an element, it can be wrong. The framework only accepts elements that exist on the page, and a failed assertion is checked again with a fresh question to the LLM, but a wrong choice on a "nothing is there" check could still hide a problem. That is why screenshots, the matched elements and the LLM's reasons are recorded.
 - `application_state` assertions cannot be read from the page and are reported as needing manual review.
+- The planner prompt and plan validator contain rules for the shopping-cart flow (see [TEST_PLAN.md](TEST_PLAN.md#14-known-limitations-and-future-work)).
 - Scenarios run one after another in a single browser engine.
 - Only the SauceDemo shopping-cart issue has been exercised so far.
 
@@ -196,4 +270,4 @@ evidence/      plans, reports and screenshots
 
 - Never commit `.env`.
 - Never expose API keys or GitHub tokens.
-- Reports redact the SauceDemo login details.
+- Reports and logs redact the SauceDemo login details.

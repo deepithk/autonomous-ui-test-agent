@@ -38,7 +38,26 @@ The agent identifies product details from the actual page, rather than
 assuming a fixed product or page structure. The product name and price it
 reads are reused in later steps and assertions.
 
-## 3. Reference Scenarios and the Generated Plan
+## 3. Acceptance Criteria, Reference Scenarios and the Generated Plan
+
+### Acceptance criteria from the issue
+
+These are the acceptance criteria of GitHub issue #1, "Feature: Add and
+Remove Products from Shopping Cart", word for word. The agent reads exactly
+this text from the issue. A copy of the whole issue is in
+[`fixtures/issue-1.md`](fixtures/issue-1.md).
+
+| ID | Title | Given / When / Then |
+|---|---|---|
+| AC-01 | Successful Login | **Given** the user is on the login page, **when** valid credentials are entered, **then** the products inventory page should be displayed. |
+| AC-02 | Add Product to Cart | **Given** the user is on the products inventory page, **when** the user selects Add to cart for a product, **then** the selected product should be added to the shopping cart. |
+| AC-03 | Update Cart Count | **Given** a product has been added, **then** the shopping cart badge should display the correct item count. |
+| AC-04 | Verify Cart Contents | **Given** a product has been added, **when** the user opens the shopping cart, **then** the cart should display the correct product name, quantity and price. |
+| AC-05 | Remove Product | **Given** the shopping cart contains a product, **when** the user selects Remove, **then** the product should be removed from the cart. |
+| AC-06 | Verify Empty Cart | **Given** the product has been removed, **then** the shopping cart should contain no products and the cart badge should reflect the empty state. |
+
+Out of scope in the issue: payment processing, order placement,
+multiple-user scenarios, performance and load testing, mobile testing.
 
 ### Reference scenarios
 
@@ -303,7 +322,7 @@ Coverage: 100%
 
 ## 9. Latest Execution Result
 
-Run of 2026-11-11 05:20 UTC. The plan was written by `gemini-3.6-flash`; the
+Run of 2026-11-11 06:15 UTC. The plan was written by `gemini-3.6-flash`; the
 execution used `gemini-3.5-flash-lite` and made 7 LLM requests (3 answers
 were reused).
 
@@ -324,9 +343,9 @@ were reused).
 
 Evidence:
 
-- [Execution report](evidence/reports/test-execution-issue-1-2026-11-11T05-20-46-600Z.md)
-- [Execution log](evidence/logs/test-execution-2026-11-11T05-20-46-600Z.log)
-- [Screenshots](evidence/screenshots/2026-11-11T05-20-46-600Z/)
+- [Execution report](evidence/reports/test-execution-issue-1-2026-11-11T06-15-59-282Z.md)
+- [Execution log](evidence/logs/test-execution-2026-11-11T06-15-59-282Z.log)
+- [Screenshots](evidence/screenshots/2026-11-11T06-15-59-282Z/)
 
 ## 10. Important Implementation Note
 
