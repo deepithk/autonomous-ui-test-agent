@@ -1,20 +1,19 @@
 import {
   loadConfig,
   redactConfigForLogging
-} from './config/env.js';
+} from './env.js';
 
 import {
   ensureEvidenceDirectories,
   isMainModule
-} from './config/platform.js';
+} from './platform.js';
 
 /**
- * Phase 2 bootstrap.
- *
- * Validates configuration and initializes evidence directories.
- * Full agent execution will be implemented in later phases.
+ * Checks that .env is complete and valid, and creates the evidence
+ * folders. It makes no LLM, GitHub or browser requests, so it costs
+ * nothing to run before a real plan or execution.
  */
-export async function bootstrap(): Promise<void> {
+export async function checkConfig(): Promise<void> {
   const config = loadConfig();
 
   const directories = await ensureEvidenceDirectories();
@@ -31,16 +30,16 @@ export async function bootstrap(): Promise<void> {
     directories.rootDir
   );
 
-  console.info('[INFO] Phase 2 bootstrap completed successfully.');
+  console.info('[INFO] Configuration check completed successfully.');
 }
 
-// Execute bootstrap only when this file is the application entry point.
+// Run only when this file is the entry point.
 if (isMainModule(import.meta.url, process.argv[1])) {
-  bootstrap().catch((error: unknown) => {
+  checkConfig().catch((error: unknown) => {
     const message =
       error instanceof Error ? error.message : String(error);
 
-    console.error(`[ERROR] Application startup failed:\n${message}`);
+    console.error(`[ERROR] Configuration check failed:\n${message}`);
 
     process.exitCode = 1;
   });

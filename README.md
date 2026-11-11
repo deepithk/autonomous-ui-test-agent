@@ -143,11 +143,12 @@ The command prints a verdict per acceptance criterion and exits with code 1 unle
 Other commands:
 
 ```bash
+npm run check:config # validate .env and create evidence folders (no LLM or browser use)
 npm run build        # type-check and compile
 npm test             # all unit tests
 ```
 
-`npm start` only validates the configuration and creates the evidence folders. It does not run the agent.
+`check:config` is a free way to confirm `.env` is complete before spending LLM requests on a plan or an execution.
 
 ### Reading the results
 

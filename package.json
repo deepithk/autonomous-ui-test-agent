@@ -1,7 +1,7 @@
 {
   "name": "autonomous-ui-test-agent",
   "version": "0.1.0",
-  "description": "Cross-platform Autonomous UI Test Execution Agent using Claude API and Playwright MCP",
+  "description": "Cross-platform Autonomous UI Test Execution Agent using an LLM (Gemini or Anthropic) and Playwright MCP",
   "private": true,
   "type": "module",
   "engines": {
@@ -10,8 +10,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "start": "node dist/index.js",
-    "dev": "tsx src/index.ts",
+    "check:config": "tsx src/config/check-config.ts",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "read:issue": "tsx src/github/run-issue-reader.ts",
