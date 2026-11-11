@@ -83,7 +83,12 @@ function scenario(
 }
 
 function createBrowser(
-  options: { navigateDelayMs?: number; screenshots?: boolean } = {}
+  options: {
+    navigateDelayMs?: number;
+    screenshots?: boolean;
+    screenshotDelayMs?: number;
+    snapshotYaml?: string;
+  } = {}
 ) {
   let url = 'about:blank';
 
@@ -113,12 +118,18 @@ function createBrowser(
         return [
           {
             type: 'text',
-            text: `- Page URL: ${url}\n### Snapshot\n\`\`\`yaml\n${LOGIN_YAML}\n\`\`\``
+            text: `- Page URL: ${url}\n### Snapshot\n\`\`\`yaml\n${options.snapshotYaml ?? LOGIN_YAML}\n\`\`\``
           }
         ];
       }
 
       if (name === 'browser_take_screenshot') {
+        if (options.screenshotDelayMs) {
+          await new Promise(resolve =>
+            setTimeout(resolve, options.screenshotDelayMs)
+          );
+        }
+
         return options.screenshots === false
           ? [{ type: 'text', text: 'no image' }]
           : [
@@ -199,7 +210,14 @@ describe('ScenarioRunner', () => {
       Buffer.from('fake-png')
     );
 
+    // Every step leaves a screenshot: STEP-01 has no assertions, so it
+    // is a plain step screenshot; STEP-02 is a checkpoint.
     expect(result.screenshots).toEqual([
+      {
+        stepId: 'STEP-01',
+        reason: 'step',
+        path: 'shots/SC-001_STEP-01_step.png'
+      },
       {
         stepId: 'STEP-02',
         reason: 'checkpoint',
@@ -391,10 +409,98 @@ describe('ScenarioRunner', () => {
     expect(events).toEqual([
       'scenario_started',
       'step_finished',
+      'page_observed',
       'screenshot_saved',
       'assert:error',
       'scenario_finished'
     ]);
+  });
+
+  it('records what the page showed when a step fails', async () => {
+    const { browser } = createBrowser({
+      snapshotYaml: [
+        '- textbox "Username" [ref=e11]',
+        '- heading "Epic sadface: this user has been locked out." [level=3] [ref=e20]'
+      ].join('\n')
+    });
+
+    const { runner } = createRunner(browser);
+
+    const result = await runner.run(
+      scenario([step(1, { value: 'https://evil.example/' })], [])
+    );
+
+    expect(result.failureContext).toEqual({
+      stepId: 'STEP-01',
+      url: 'about:blank',
+      notes: ['Epic sadface: this user has been locked out.']
+    });
+  });
+
+  it('records the page when an assertion does not hold', async () => {
+    const { browser } = createBrowser();
+
+    const { runner } = createRunner(browser);
+
+    const result = await runner.run(
+      scenario([step(1)], [urlAssertion(1, 'STEP-01', '/cart.html')])
+    );
+
+    expect(result.status).toBe('failed');
+
+    expect(result.failureContext).toMatchObject({
+      stepId: 'STEP-01',
+      url: 'https://www.saucedemo.com/'
+    });
+  });
+
+  it('does not record page context for a passing scenario', async () => {
+    const { browser } = createBrowser();
+
+    const { runner } = createRunner(browser);
+
+    const result = await runner.run(
+      scenario([step(1)], [urlAssertion(1, 'STEP-01', '/')])
+    );
+
+    expect(result.failureContext).toBeUndefined();
+  });
+
+  it('takes a screenshot after every step', async () => {
+    const { browser } = createBrowser();
+
+    const { runner } = createRunner(browser);
+
+    const result = await runner.run(
+      scenario(
+        [step(1), step(2), step(3)],
+        [urlAssertion(1, 'STEP-03', '/')]
+      )
+    );
+
+    expect(
+      result.screenshots.map(shot => `${shot.stepId}:${shot.reason}`)
+    ).toEqual(['STEP-01:step', 'STEP-02:step', 'STEP-03:checkpoint']);
+  });
+
+  it('does not count screenshot time against the scenario limit', async () => {
+    const { browser } = createBrowser({ screenshotDelayMs: 120 });
+
+    const { runner } = createRunner(browser, {
+      // The first two screenshots alone take about 240 ms, so the
+      // third step would start after the limit if they were counted.
+      scenarioTimeoutMs: 200
+    });
+
+    const result = await runner.run(
+      scenario(
+        [step(1), step(2), step(3)],
+        [urlAssertion(1, 'STEP-03', '/')]
+      )
+    );
+
+    expect(result.status).toBe('passed');
+    expect(result.error).toBeUndefined();
   });
 
   it('is not affected by a listener that throws', async () => {

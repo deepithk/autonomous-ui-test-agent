@@ -78,10 +78,95 @@ describe('formatLogEvent', () => {
       AT
     );
 
-    expect(line).toContain('(chosen by LLM)');
+    expect(line).toContain('(chosen by LLM: "First product.")');
     expect(line).toContain(
       'captured selectedProductName="Sauce Labs Backpack"'
     );
+  });
+
+  it('marks an answer that was reused', () => {
+    const line = formatLogEvent(
+      {
+        type: 'step_finished',
+        scenarioId: 'SC-003',
+        action: 'click',
+        targetDescription: 'Add to cart',
+        result: {
+          stepId: 'STEP-07',
+          status: 'passed',
+          durationMs: 9,
+          resolution: {
+            method: 'llm',
+            element: 'button "Add to cart"',
+            ref: 'e54',
+            reason: 'Belongs to the Backpack.',
+            cached: true
+          }
+        }
+      },
+      AT
+    );
+
+    expect(line).toContain(
+      '(chosen by LLM, answer reused: "Belongs to the Backpack.")'
+    );
+  });
+
+  it('shortens a long LLM reason', () => {
+    const line = formatLogEvent(
+      {
+        type: 'step_finished',
+        scenarioId: 'SC-003',
+        action: 'click',
+        targetDescription: 'Cart',
+        result: {
+          stepId: 'STEP-08',
+          status: 'passed',
+          durationMs: 9,
+          resolution: {
+            method: 'llm',
+            element: 'button "Cart"',
+            ref: 'e1',
+            reason: 'r'.repeat(500)
+          }
+        }
+      },
+      AT
+    );
+
+    expect(line).toContain('...');
+    expect(line.length).toBeLessThan(400);
+  });
+
+  it('logs what the page showed when something went wrong', () => {
+    expect(
+      formatLogEvent(
+        {
+          type: 'page_observed',
+          scenarioId: 'SC-001',
+          context: {
+            stepId: 'STEP-04',
+            url: 'https://www.saucedemo.com/',
+            notes: ['Epic sadface: locked out', 'Second']
+          }
+        },
+        AT
+      )
+    ).toBe(
+      `${STAMP} [SC-001] [STEP-04] PAGE url=https://www.saucedemo.com/ ` +
+      'messages: "Epic sadface: locked out"; "Second"'
+    );
+
+    expect(
+      formatLogEvent(
+        {
+          type: 'page_observed',
+          scenarioId: 'SC-001',
+          context: { stepId: 'STEP-04', url: 'u', notes: [] }
+        },
+        AT
+      )
+    ).toContain('messages: no alerts or error messages');
   });
 
   it('logs a failed step on one line', () => {

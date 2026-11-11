@@ -97,6 +97,59 @@ export function parseSnapshot(yaml: string): SnapshotElement[] {
   return elements;
 }
 
+const ALERT_ROLES = new Set(['alert', 'alertdialog', 'status']);
+
+const MESSAGE_ROLES = new Set([
+  'heading',
+  'generic',
+  'text',
+  'paragraph'
+]);
+
+const PROBLEM_WORDS =
+  /error|sorry|invalid|denied|locked|failed|not found|unavailable|sadface/i;
+
+/**
+ * Alerts and error-like messages shown on the page, such as a failed
+ * login message. Used to explain a failure without opening the browser.
+ * At most maxNotes short notes are returned, without duplicates.
+ */
+export function findPageNotes(
+  elements: SnapshotElement[],
+  maxNotes = 3
+): string[] {
+  const notes: string[] = [];
+
+  for (const element of elements) {
+    const text = (element.text || element.name).replace(/\s+/g, ' ').trim();
+
+    if (text === '') {
+      continue;
+    }
+
+    const isAlert = ALERT_ROLES.has(element.role);
+
+    const looksLikeProblem =
+      MESSAGE_ROLES.has(element.role) && PROBLEM_WORDS.test(text);
+
+    if (!isAlert && !looksLikeProblem) {
+      continue;
+    }
+
+    const note = text.length > 160 ? `${text.slice(0, 160)}...` : text;
+
+    if (!notes.includes(note)) {
+      notes.push(note);
+    }
+
+    if (notes.length >= maxNotes) {
+      break;
+    }
+  }
+
+  return notes;
+}
+
 /**
  * Text shown by an element: its own text, otherwise the text of
  * its descendants, otherwise its accessible name.

@@ -49,6 +49,23 @@ function readPlanArgument(argv: string[]): string | undefined {
 }
 
 /**
+ * Reads --label <name> from the command line. The label becomes part
+ * of the evidence file names, so a special run (for example a
+ * demonstration of a failure) can be told apart from a normal one.
+ */
+function readLabelArgument(argv: string[]): string {
+  const index = argv.indexOf('--label');
+
+  const raw = index === -1 ? '' : (argv[index + 1] ?? '');
+
+  return raw
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 30);
+}
+
+/**
  * The newest saved test plan. Report names contain an ISO
  * timestamp, so sorting by name sorts by time.
  */
@@ -93,7 +110,13 @@ async function main(): Promise<void> {
 
   const redactor = new CaptureStore(secrets);
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const label = readLabelArgument(process.argv.slice(2));
+
+  // Names every evidence file of this run, e.g. 2026-11-11T05-20-46-600Z
+  // or failure-demo-2026-11-11T05-20-46-600Z.
+  const timestamp =
+    (label ? `${label}-` : '') +
+    new Date().toISOString().replace(/[:.]/g, '-');
 
   const screenshotDir = path.join(evidence.screenshotsDir, timestamp);
 
@@ -104,13 +127,15 @@ async function main(): Promise<void> {
     `test-execution-${timestamp}.log`
   );
 
+  // Every log line is also printed, so the console shows what the
+  // agent is doing as it happens.
   const writeLog = (line: string): void => {
+    const text = redactor.redactAndShorten(line, 2000);
+
+    console.info(text);
+
     try {
-      appendFileSync(
-        logPath,
-        `${redactor.redactAndShorten(line, 2000)}\n`,
-        'utf8'
-      );
+      appendFileSync(logPath, `${text}\n`, 'utf8');
     } catch {
       // Ignored on purpose.
     }
@@ -181,17 +206,6 @@ async function main(): Promise<void> {
     }),
 
     runScenario: scenario => runner.run(scenario),
-
-    onScenarioDone: result => {
-      console.info(
-        `[${result.status.toUpperCase()}] ${result.scenarioId}: ` +
-        `${result.title} (${result.durationMs} ms)`
-      );
-
-      if (result.error) {
-        console.info(`        ${redactor.redact(result.error)}`);
-      }
-    },
 
     saveReport: async (finished: ExecutionRunReport) => {
       const base = path.join(

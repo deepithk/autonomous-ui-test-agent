@@ -8,6 +8,12 @@ function oneLine(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
 
+function shorten(value: string, length: number): string {
+  const text = oneLine(value);
+
+  return text.length > length ? `${text.slice(0, length)}...` : text;
+}
+
 function quote(value: string): string {
   return `"${oneLine(value)}"`;
 }
@@ -39,10 +45,17 @@ export function formatLogEvent(
     case 'step_finished': {
       const { result } = event;
 
+      // For an LLM choice, the log shows the LLM's own reason, which
+      // is the closest thing to its thought process.
+      const why =
+        result.resolution?.method === 'llm' && result.resolution.reason
+          ? `: ${quote(shorten(result.resolution.reason, 140))}`
+          : '';
+
       const found = result.resolution
         ? ` -> ${oneLine(result.resolution.element)} ` +
           `(${METHOD_TEXT[result.resolution.method]}` +
-          `${result.resolution.cached ? ', answer reused' : ''})`
+          `${result.resolution.cached ? ', answer reused' : ''}${why})`
         : '';
 
       const captured = result.captured
@@ -83,6 +96,20 @@ export function formatLogEvent(
         `${stamp} [${event.scenarioId}] [${event.stepId}] ` +
         `SCREENSHOT ${event.reason} ${event.path}`
       );
+
+    case 'page_observed': {
+      const { context } = event;
+
+      const notes =
+        context.notes.length > 0
+          ? context.notes.map(note => quote(note)).join('; ')
+          : 'no alerts or error messages';
+
+      return (
+        `${stamp} [${event.scenarioId}] [${context.stepId}] PAGE ` +
+        `url=${context.url} messages: ${notes}`
+      );
+    }
 
     case 'scenario_finished':
       return (

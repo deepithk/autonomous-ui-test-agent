@@ -10,6 +10,13 @@ import { validateTestPlan } from '../planner/test-plan-schema.js';
 
 import type { TestScenario } from '../planner/test-plan-schema.js';
 
+import { analyzeFailures } from './failure-analysis.js';
+
+import type {
+  FailureCategory,
+  FailureFinding
+} from './failure-analysis.js';
+
 import type { LlmUsage } from './semantic-resolver.js';
 
 import type { ScenarioResult } from './scenario-runner.js';
@@ -51,6 +58,9 @@ export interface ExecutionRunReport {
   };
 
   criteria: CriterionVerdict[];
+
+  /** Why anything that did not pass did not pass, and what to do. */
+  failures: FailureFinding[];
 
   scenarios: ScenarioResult[];
 }
@@ -210,12 +220,60 @@ export async function runExecutionWorkflow(
 
     criteria: summarizeCriteria(plan.acceptanceCriteria, results),
 
+    failures: results.flatMap(analyzeFailures),
+
     scenarios: results
   };
 
   const reportPath = await dependencies.saveReport(report);
 
   return { report, reportPath };
+}
+
+const CATEGORY_TEXT: Record<FailureCategory, string> = {
+  application: 'Application behaviour does not match the criterion',
+  automation: 'The agent could not complete the step',
+  'llm-provider': 'LLM provider problem (not an application defect)',
+  limit: 'A run limit was reached'
+};
+
+function renderFailureDetails(failures: FailureFinding[]): string[] {
+  if (failures.length === 0) {
+    return [];
+  }
+
+  const lines: string[] = ['', '## Failure details'];
+
+  for (const failure of failures) {
+    lines.push(
+      '',
+      `### ${failure.scenarioId}: ${failure.title}`,
+      '',
+      `- Kind: ${CATEGORY_TEXT[failure.category]}`,
+      `- What happened: ${failure.summary}`,
+      `- Acceptance criteria: ${failure.criterionIds.join(', ')}`
+    );
+
+    if (failure.pageUrl) {
+      lines.push(`- Page at that moment: ${failure.pageUrl}`);
+    }
+
+    if (failure.pageNotes && failure.pageNotes.length > 0) {
+      lines.push(
+        `- Messages on the page: ${failure.pageNotes
+          .map(note => `"${note}"`)
+          .join('; ')}`
+      );
+    }
+
+    lines.push(`- What to do: ${failure.advice}`);
+
+    for (const shot of failure.screenshots) {
+      lines.push(`- Screenshot: ${shot}`);
+    }
+  }
+
+  return lines;
 }
 
 function cell(value: string): string {
@@ -257,6 +315,8 @@ export function renderMarkdownReport(
       `${criterion.assertionsPassed}/${criterion.assertionsTotal} |`
     );
   }
+
+  lines.push(...renderFailureDetails(report.failures));
 
   for (const scenario of report.scenarios) {
     lines.push(

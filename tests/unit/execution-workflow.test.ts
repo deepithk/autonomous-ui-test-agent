@@ -185,6 +185,7 @@ describe('runExecutionWorkflow', () => {
     expect(onScenarioDone).toHaveBeenCalledTimes(2);
 
     expect(report.verdict).toBe('PASSED');
+    expect(report.failures).toEqual([]);
     expect(report.planReportPath).toBe('reports/plan.json');
     expect(report.planningLlm.model).toBe('test-model');
     expect(report.executionLlm.model).toBe('exec-model');
@@ -205,6 +206,13 @@ describe('runExecutionWorkflow', () => {
     const { report } = await run();
 
     expect(report.verdict).toBe('FAILED');
+
+    expect(report.failures).toHaveLength(1);
+    expect(report.failures[0]).toMatchObject({
+      scenarioId: 'SC-002',
+      category: 'application',
+      criterionIds: ['AC-02']
+    });
 
     expect(report.criteria).toEqual([
       {
@@ -263,6 +271,11 @@ describe('renderMarkdownReport', () => {
 
     const markdown = renderMarkdownReport(report);
 
+    expect(markdown).toContain('## Failure details');
+    expect(markdown).toContain(
+      'Kind: Application behaviour does not match the criterion'
+    );
+    expect(markdown).toContain('What to do:');
     expect(markdown).toContain('# Test execution report: FAILED');
     expect(markdown).toContain('Plan written by: gemini / test-model');
     expect(markdown).toContain('Executed with: gemini / exec-model');

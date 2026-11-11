@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   extractPageUrl,
   extractSnapshotYaml,
+  findPageNotes,
   getElementText,
   parseSnapshot
 } from '../../src/executor/snapshot.js';
@@ -86,6 +87,48 @@ describe('parseSnapshot', () => {
     expect(
       elements.find(element => element.ref === 'e125')?.depth
     ).toBe(3);
+  });
+});
+
+describe('findPageNotes', () => {
+  it('finds a failed-login message and alerts', () => {
+    const notes = findPageNotes(
+      parseSnapshot(
+        [
+          '- textbox "Username" [ref=e11]',
+          '- heading "Epic sadface: Sorry, this user has been locked out." [level=3] [ref=e20]',
+          '- alert [ref=e30]: Something went wrong'
+        ].join('\n')
+      )
+    );
+
+    expect(notes).toEqual([
+      'Epic sadface: Sorry, this user has been locked out.',
+      'Something went wrong'
+    ]);
+  });
+
+  it('ignores ordinary page content', () => {
+    expect(findPageNotes(parseSnapshot(INVENTORY_YAML))).toEqual([]);
+  });
+
+  it('limits and shortens notes and removes duplicates', () => {
+    const long = `Error: ${'x'.repeat(300)}`;
+
+    const yaml = [
+      `- generic [ref=e1]: ${long}`,
+      '- generic [ref=e2]: Error one',
+      '- generic [ref=e3]: Error one',
+      '- generic [ref=e4]: Error two',
+      '- generic [ref=e5]: Error three'
+    ].join('\n');
+
+    const notes = findPageNotes(parseSnapshot(yaml), 3);
+
+    expect(notes).toHaveLength(3);
+    expect(notes[0]?.endsWith('...')).toBe(true);
+    expect(notes[0]?.length).toBeLessThanOrEqual(163);
+    expect(notes.filter(note => note === 'Error one')).toHaveLength(1);
   });
 });
 

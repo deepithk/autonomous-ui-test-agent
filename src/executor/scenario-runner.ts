@@ -13,6 +13,13 @@ import { CaptureStore } from './capture-store.js';
 
 import type { SemanticResolver } from './semantic-resolver.js';
 
+import {
+  extractPageUrl,
+  extractSnapshotYaml,
+  findPageNotes,
+  parseSnapshot
+} from './snapshot.js';
+
 import { StepExecutor } from './step-executor.js';
 
 import type {
@@ -54,8 +61,17 @@ export type ExecutionEvent =
       type: 'screenshot_saved';
       scenarioId: string;
       stepId: string;
-      reason: 'checkpoint' | 'failure';
+      reason: 'step' | 'checkpoint' | 'failure';
       path: string;
+    }
+  | {
+      type: 'page_observed';
+      scenarioId: string;
+      context: {
+        stepId: string;
+        url: string;
+        notes: string[];
+      };
     }
   | {
       type: 'scenario_finished';
@@ -95,10 +111,29 @@ export interface ScenarioRunnerOptions {
   ) => Promise<string>;
 }
 
+/**
+ * step:       taken after a step that has no assertions.
+ * checkpoint: taken after the assertions of a step were checked.
+ * failure:    taken when a step failed.
+ */
+export type ScreenshotReason = 'step' | 'checkpoint' | 'failure';
+
 export interface ScenarioScreenshot {
   stepId: string;
-  reason: 'checkpoint' | 'failure';
+  reason: ScreenshotReason;
   path: string;
+}
+
+/**
+ * What the page showed when something went wrong, so a failure can be
+ * explained without opening the browser.
+ */
+export interface FailureContext {
+  stepId: string;
+  url: string;
+
+  /** Alerts and error-like messages found on the page. */
+  notes: string[];
 }
 
 /**
@@ -116,6 +151,10 @@ export interface ScenarioResult {
   skippedStepIds: string[];
   assertions: AssertionResult[];
   screenshots: ScenarioScreenshot[];
+
+  /** Set when a step failed or an assertion did not hold. */
+  failureContext?: FailureContext;
+
   durationMs: number;
   error?: string;
 }
@@ -249,8 +288,12 @@ export class ScenarioRunner {
         recoveryAttempts
       });
 
+      // Time spent saving evidence is not test time, so it does not
+      // count against the scenario's time limit.
+      let evidenceMs = 0;
+
       const remaining = (): number =>
-        scenarioTimeoutMs - (Date.now() - startedAt);
+        scenarioTimeoutMs - (Date.now() - startedAt - evidenceMs);
 
       for (const [position, step] of scenario.steps.entries()) {
         const stepResult = await withDeadline(
@@ -272,7 +315,14 @@ export class ScenarioRunner {
         if (stepResult.status === 'failed') {
           failureReason = `${step.stepId} failed: ${stepResult.error ?? 'unknown error'}`;
 
-          await this.capture(
+          evidenceMs += await this.observeFailure(
+            browser,
+            scenario.scenarioId,
+            step.stepId,
+            result
+          );
+
+          evidenceMs += await this.capture(
             browser,
             scenario.scenarioId,
             step.stepId,
@@ -312,17 +362,27 @@ export class ScenarioRunner {
               result: assertionResult
             });
           }
+
+          // Record what the page showed when an assertion did not hold.
+          if (checked.some(entry => entry.status !== 'passed')) {
+            evidenceMs += await this.observeFailure(
+              browser,
+              scenario.scenarioId,
+              step.stepId,
+              result
+            );
+          }
         }
 
-        if (checkpoint.length > 0) {
-          await this.capture(
-            browser,
-            scenario.scenarioId,
-            step.stepId,
-            'checkpoint',
-            result
-          );
-        }
+        // Every step leaves a screenshot: a checkpoint after its
+        // assertions were checked, or a plain step screenshot.
+        evidenceMs += await this.capture(
+          browser,
+          scenario.scenarioId,
+          step.stepId,
+          checkpoint.length > 0 ? 'checkpoint' : 'step',
+          result
+        );
       }
     } catch (error) {
       failureReason = new CaptureStore(secrets).redactAndShorten(
@@ -434,13 +494,53 @@ export class ScenarioRunner {
    * Saves a screenshot as evidence. A screenshot problem never
    * changes the test result.
    */
+  /**
+   * Notes the page URL and any alert or error-like text, once per
+   * scenario (the first problem is the one worth explaining).
+   * Returns the milliseconds spent.
+   */
+  private async observeFailure(
+    browser: ScenarioBrowser,
+    scenarioId: string,
+    stepId: string,
+    result: ScenarioResult
+  ): Promise<number> {
+    if (result.failureContext) {
+      return 0;
+    }
+
+    const startedAt = Date.now();
+
+    try {
+      const content = await browser.callTool('browser_snapshot');
+
+      const context: FailureContext = {
+        stepId,
+        url: extractPageUrl(content),
+        notes: findPageNotes(
+          parseSnapshot(extractSnapshotYaml(content))
+        )
+      };
+
+      result.failureContext = context;
+
+      this.emit({ type: 'page_observed', scenarioId, context });
+    } catch {
+      // Evidence is best effort.
+    }
+
+    return Date.now() - startedAt;
+  }
+
   private async capture(
     browser: ScenarioBrowser,
     scenarioId: string,
     stepId: string,
     reason: ScenarioScreenshot['reason'],
     result: ScenarioResult
-  ): Promise<void> {
+  ): Promise<number> {
+    const startedAt = Date.now();
+
     try {
       const content: McpContentBlock[] = await browser.callTool(
         'browser_take_screenshot'
@@ -451,7 +551,7 @@ export class ScenarioRunner {
       );
 
       if (!image?.data) {
-        return;
+        return Date.now() - startedAt;
       }
 
       const fileName =
@@ -475,5 +575,7 @@ export class ScenarioRunner {
     } catch {
       // Evidence is best effort.
     }
+
+    return Date.now() - startedAt;
   }
 }
