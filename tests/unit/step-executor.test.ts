@@ -255,6 +255,30 @@ describe('StepExecutor', () => {
     expect(result.error).toMatch(/has not been captured/);
   });
 
+  it('does not retry when the LLM provider itself fails', async () => {
+    const { executor, callTool, llm } = setup({ recoveryAttempts: 2 });
+
+    (llm.generateStructured as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('429 quota exceeded ' + 'x'.repeat(2000))
+    );
+
+    const result = await executor.execute(
+      step({
+        action: 'click',
+        target: target({ description: 'Checkout button' })
+      })
+    );
+
+    expect(result.status).toBe('failed');
+    expect(result.error).toMatch(/^429 quota exceeded/);
+    expect(result.error).toContain('[truncated]');
+    expect(result.error?.length).toBeLessThan(500);
+
+    // One snapshot, one LLM call: no retries.
+    expect(callTool).toHaveBeenCalledTimes(1);
+    expect(llm.generateStructured).toHaveBeenCalledTimes(1);
+  });
+
   it('retries element lookup with a fresh snapshot', async () => {
     const { executor, callTool } = setup({
       recoveryAttempts: 1,

@@ -246,9 +246,9 @@ export class ScenarioRunner {
         }
       }
     } catch (error) {
-      failureReason = error instanceof Error
-        ? error.message
-        : String(error);
+      failureReason = new CaptureStore(secrets).redactAndShorten(
+        error instanceof Error ? error.message : String(error)
+      );
 
       result.skippedStepIds = scenario.steps
         .map(step => step.stepId)

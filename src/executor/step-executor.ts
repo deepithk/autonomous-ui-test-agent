@@ -7,6 +7,8 @@ import type { McpContentBlock } from './browser-session.js';
 
 import type { CaptureStore } from './capture-store.js';
 
+import { SemanticResolverError } from './semantic-resolver.js';
+
 import type {
   ResolvedTarget,
   SemanticResolver
@@ -101,7 +103,7 @@ export class StepExecutor {
     } catch (error) {
       result.status = 'failed';
 
-      result.error = this.options.captures.redact(
+      result.error = this.options.captures.redactAndShorten(
         error instanceof Error ? error.message : String(error)
       );
     }
@@ -309,6 +311,13 @@ export class StepExecutor {
 
         return { resolved, elements };
       } catch (error) {
+        // Only "element not found" is worth another look at the page.
+        // Provider failures such as quota errors would just repeat,
+        // and every repeat is another paid LLM call.
+        if (!(error instanceof SemanticResolverError)) {
+          throw error;
+        }
+
         lastError = error;
       }
     }

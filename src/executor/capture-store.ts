@@ -78,6 +78,18 @@ export class CaptureStore {
   }
 
   /**
+   * Redacts secrets and shortens long text, such as the JSON an
+   * API returns with an error, so reports stay readable.
+   */
+  redactAndShorten(text: string, maxLength = 400): string {
+    const redacted = this.redact(text);
+
+    return redacted.length > maxLength
+      ? `${redacted.slice(0, maxLength)}... [truncated]`
+      : redacted;
+  }
+
+  /**
    * Removes secret values from text before it is logged or stored.
    */
   redact(text: string): string {

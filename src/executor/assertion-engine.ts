@@ -148,7 +148,7 @@ export class AssertionEngine {
     } catch (error) {
       result.status = 'error';
 
-      result.error = captures.redact(
+      result.error = captures.redactAndShorten(
         error instanceof Error ? error.message : String(error)
       );
     }

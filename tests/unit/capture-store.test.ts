@@ -57,6 +57,19 @@ describe('CaptureStore', () => {
     expect(second.has('price')).toBe(false);
   });
 
+  it('shortens long text after redacting', () => {
+    const store = new CaptureStore({ PASSWORD: 'secret_sauce' });
+
+    const text = store.redactAndShorten(
+      'secret_sauce ' + 'y'.repeat(1000),
+      50
+    );
+
+    expect(text.startsWith('[REDACTED] yyy')).toBe(true);
+    expect(text.endsWith('... [truncated]')).toBe(true);
+    expect(text).not.toContain('secret_sauce');
+  });
+
   it('redacts secret values', () => {
     const store = new CaptureStore({ PASSWORD: 'secret_sauce' });
 
