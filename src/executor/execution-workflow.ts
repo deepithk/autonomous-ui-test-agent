@@ -27,7 +27,12 @@ export interface ExecutionRunReport {
   planReportPath: string;
 
   source: PlanningRunReport['source'];
-  llm: PlanningRunReport['llm'];
+
+  /** The model that wrote the test plan. */
+  planningLlm: PlanningRunReport['llm'];
+
+  /** The model that located elements while the plan was executed. */
+  executionLlm: PlanningRunReport['llm'];
 
   verdict: RunVerdict;
 
@@ -43,6 +48,9 @@ export interface ExecutionRunReport {
 }
 
 export interface ExecutionWorkflowDependencies {
+  /** Provider and model used while executing, for the report. */
+  executionLlm: PlanningRunReport['llm'];
+
   /** Loads a saved planning report. */
   loadPlanReport: () => Promise<{
     report: PlanningRunReport;
@@ -154,7 +162,8 @@ export async function runExecutionWorkflow(
     generatedAt: new Date().toISOString(),
     planReportPath,
     source: plan.source,
-    llm: plan.llm,
+    planningLlm: plan.llm,
+    executionLlm: dependencies.executionLlm,
 
     verdict: overallVerdict(results.map(result => result.status)),
 
@@ -204,7 +213,8 @@ export function renderMarkdownReport(
     '',
     `- Issue: #${report.source.issueNumber} ${report.source.issueTitle}`,
     `- Generated: ${report.generatedAt}`,
-    `- LLM: ${report.llm.provider} / ${report.llm.model}`,
+    `- Plan written by: ${report.planningLlm.provider} / ${report.planningLlm.model}`,
+    `- Executed with: ${report.executionLlm.provider} / ${report.executionLlm.model}`,
     '',
     '## Acceptance criteria',
     '',

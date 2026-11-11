@@ -12,6 +12,10 @@ import { ensureEvidenceDirectories } from '../config/platform.js';
 
 import { createLLMProvider } from '../planner/providers/provider-factory.js';
 
+import {
+  RetryingProvider
+} from '../planner/providers/retrying-provider.js';
+
 import type {
   PlanningRunReport
 } from '../planner/planning-workflow.js';
@@ -96,7 +100,9 @@ async function main(): Promise<void> {
         actionTimeoutMs: config.ACTION_TIMEOUT_MS
       }),
 
-    resolver: new SemanticResolver(provider, {
+    // Temporary provider trouble (such as a 503) is retried;
+    // quota errors are not.
+    resolver: new SemanticResolver(new RetryingProvider(provider), {
       maxOutputTokens: 2048,
       temperature: 0
     }),
@@ -125,6 +131,11 @@ async function main(): Promise<void> {
   console.info(`[INFO] Test plan: ${planFile}\n`);
 
   const { report, reportPath } = await runExecutionWorkflow({
+    executionLlm: {
+      provider: provider.providerName,
+      model: config.LLM_MODEL
+    },
+
     loadPlanReport: async () => ({
       report: JSON.parse(
         await readFile(planFile, 'utf8')
