@@ -42,6 +42,8 @@ Issue #4 (sorting products) was planned and executed by the `rfqa-agent.yml` wor
 - [Execution log](evidence/logs/test-execution-issue-4-2026-11-11T08-02-41-339Z.log)
 - [Screenshots](evidence/screenshots/issue-4-2026-11-11T08-02-41-339Z/)
 
+A one-page visual overview is in [docs/overview.html](docs/overview.html); download it and open it in a browser.
+
 Design documents: [TEST_PLAN.md](TEST_PLAN.md) (architecture, prompt strategy, guardrails) and [SCENARIOS.md](SCENARIOS.md) (acceptance criteria and scenarios).
 
 ## Quick start (about 5 minutes, no GitHub needed)
