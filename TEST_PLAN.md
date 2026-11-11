@@ -283,8 +283,9 @@ test passed:
 2. **The resolver** points at one element, or a list of elements, on the
    current page during execution.
 
-The full prompts are in `src/planner/test-planner.ts` and
-`src/executor/semantic-resolver.ts`.
+The full prompts are in `src/planner/planner-prompt.ts` and
+`src/executor/resolver-prompts.ts`, each in a file of its own so the wording
+can be reviewed without reading the code around it.
 
 **Planner prompt.** It is a list of numbered rules in groups: source
 requirements, scenario independence, preconditions, credential security,

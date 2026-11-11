@@ -250,9 +250,12 @@ Everything produced by a run goes in [`evidence/`](evidence/):
 src/
   config/      settings validation, platform helpers
   github/      issue reader (GitHub or local file), acceptance-criteria parser
-  planner/     LLM test planner, plan schema, Gemini and Anthropic providers
+  planner/     LLM test planner and its prompt, plan schema,
+               Gemini and Anthropic providers
   executor/    browser session, step executor, assertion engine,
-               scenario runner, failure analysis, report workflow
+               scenario runner, element resolver and its prompts,
+               failure analysis, report workflow
+  util/        small shared helpers (error text, text shortening, CLI wrapper)
 tests/unit/    unit tests (no network and no browser needed)
 fixtures/      an example issue
 evidence/      plans, reports, logs and screenshots

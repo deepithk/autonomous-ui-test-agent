@@ -236,34 +236,6 @@ export class ScenarioRunner {
       title: scenario.title
     });
 
-    if (scenario.steps.length > maxSteps) {
-      result.status = 'error';
-
-      result.error =
-        `Scenario has ${scenario.steps.length} steps, ` +
-        `more than the limit of ${maxSteps}.`;
-
-      result.skippedStepIds = scenario.steps.map(step => step.stepId);
-
-      result.assertions = scenario.assertions.map(assertion =>
-        this.notEvaluated(assertion, 'the scenario was not run')
-      );
-
-      for (const assertion of result.assertions) {
-        this.emit({
-          type: 'assertion_finished',
-          scenarioId: scenario.scenarioId,
-          result: assertion
-        });
-      }
-
-      result.durationMs = Date.now() - startedAt;
-
-      this.emitFinished(result);
-
-      return result;
-    }
-
     let browser: ScenarioBrowser | undefined;
 
     const evaluated = new Map<string, AssertionResult>();
@@ -275,6 +247,16 @@ export class ScenarioRunner {
     let notRunBecause: string | undefined;
 
     try {
+      // Checked before a browser is opened. The error is handled like
+      // any other that stops a scenario: nothing runs, every assertion
+      // is reported as not evaluated, and the result is an error.
+      if (scenario.steps.length > maxSteps) {
+        throw new Error(
+          `Scenario has ${scenario.steps.length} steps, ` +
+          `more than the limit of ${maxSteps}.`
+        );
+      }
+
       browser = await this.options.openBrowser();
 
       const captures = new CaptureStore(secrets);
