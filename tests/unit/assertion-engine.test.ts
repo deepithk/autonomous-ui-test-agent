@@ -161,6 +161,43 @@ describe('AssertionEngine', () => {
     expect(result.actual).toBe('$9.99');
   });
 
+  describe('text of a container the LLM chose', () => {
+    // e43 is a whole product card: the name, the description, the price
+    // and a button are all inside it.
+    it('passes when the value is a complete node inside the container', async () => {
+      const { engine } = setup({ refs: ['e43'] });
+
+      for (const expected of ['Sauce Labs Backpack', '$29.99']) {
+        const result = await engine.evaluate(
+          assertion({ type: 'text', expectedValue: expected })
+        );
+
+        expect(result.status).toBe('passed');
+        expect(result.actual).toBe(expected);
+      }
+    });
+
+    it('still fails for part of a node, never a partial match', async () => {
+      const { engine } = setup({ refs: ['e43'] });
+
+      const result = await engine.evaluate(
+        assertion({ type: 'text', expectedValue: 'Sauce Labs' })
+      );
+
+      expect(result.status).toBe('failed');
+    });
+
+    it('still fails when the value is not shown inside the container', async () => {
+      const { engine } = setup({ refs: ['e43'] });
+
+      const result = await engine.evaluate(
+        assertion({ type: 'text', expectedValue: 'Sauce Labs Bike Light' })
+      );
+
+      expect(result.status).toBe('failed');
+    });
+  });
+
   it('fails a text assertion when the element is missing', async () => {
     const { engine } = setup({ refs: [] });
 

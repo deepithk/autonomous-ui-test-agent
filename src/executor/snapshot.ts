@@ -155,6 +155,40 @@ export function findPageNotes(
 }
 
 /**
+ * The text of each node inside an element: its own text, or its name when
+ * it has none. Used to tell whether a value is displayed as a node of its
+ * own inside a container, such as a product name inside a product card.
+ */
+export function getDescendantTexts(
+  elements: SnapshotElement[],
+  index: number
+): string[] {
+  const element = elements[index];
+
+  if (!element) {
+    return [];
+  }
+
+  const texts: string[] = [];
+
+  for (let next = index + 1; next < elements.length; next++) {
+    const candidate = elements[next];
+
+    if (!candidate || candidate.depth <= element.depth) {
+      break;
+    }
+
+    const text = candidate.text || candidate.name;
+
+    if (text) {
+      texts.push(text);
+    }
+  }
+
+  return texts;
+}
+
+/**
  * Text shown by an element: its own text, otherwise the text of
  * its descendants, otherwise its accessible name.
  */

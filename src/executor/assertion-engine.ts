@@ -17,6 +17,7 @@ import type {
 import {
   extractPageUrl,
   extractSnapshotYaml,
+  getDescendantTexts,
   getElementText,
   parseSnapshot
 } from './snapshot.js';
@@ -144,9 +145,26 @@ function judge(
         )
       );
 
+      // The element chosen can be a container, such as a whole product
+      // card, whose text is everything inside it. The value counts as
+      // shown when it is the complete text of the element, or of a node
+      // inside it. It is still an exact match, never a partial one.
+      const wanted = collapseWhitespace(expected);
+
+      const inside =
+        type === 'text'
+          ? found.flatMap(entry =>
+              getDescendantTexts(page.elements, entry.index)
+            )
+          : [];
+
+      const passed =
+        values.includes(wanted) ||
+        inside.map(collapseWhitespace).includes(wanted);
+
       return {
-        passed: values.includes(collapseWhitespace(expected)),
-        actual: values.join(' | '),
+        passed,
+        actual: passed ? wanted : values.join(' | '),
         matched
       };
     }
