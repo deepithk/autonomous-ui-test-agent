@@ -33,6 +33,18 @@ export function extractSnapshotYaml(
   return match?.[1]?.trimEnd() ?? '';
 }
 
+/**
+ * Reads the "Page URL" line that Playwright MCP prints above a snapshot.
+ */
+export function extractPageUrl(content: McpContentBlock[]): string {
+  const text = content
+    .filter(block => block.type === 'text')
+    .map(block => block.text ?? '')
+    .join('\n');
+
+  return /^- Page URL: (\S+)\s*$/m.exec(text)?.[1] ?? '';
+}
+
 function unquote(value: string): string {
   const trimmed = value.trim();
 

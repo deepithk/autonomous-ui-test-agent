@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  extractPageUrl,
   extractSnapshotYaml,
   getElementText,
   parseSnapshot
@@ -25,6 +26,23 @@ describe('extractSnapshotYaml', () => {
     expect(
       extractSnapshotYaml([{ type: 'text', text: 'nothing' }])
     ).toBe('');
+  });
+});
+
+describe('extractPageUrl', () => {
+  it('reads the page url line', () => {
+    expect(
+      extractPageUrl([
+        {
+          type: 'text',
+          text: '### Page\n- Page URL: https://www.saucedemo.com/cart.html\n- Page Title: Swag Labs'
+        }
+      ])
+    ).toBe('https://www.saucedemo.com/cart.html');
+  });
+
+  it('returns an empty string when absent', () => {
+    expect(extractPageUrl([{ type: 'text', text: 'none' }])).toBe('');
   });
 });
 

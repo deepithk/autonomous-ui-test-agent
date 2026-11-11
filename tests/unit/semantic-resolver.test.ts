@@ -176,6 +176,72 @@ describe('SemanticResolver', () => {
     ).rejects.toBeInstanceOf(SemanticResolverError);
   });
 
+  describe('resolveAll', () => {
+    it('returns every ref the LLM lists', async () => {
+      const { llm } = createLlm(
+        JSON.stringify({ refs: ['e54', 'e66'], reason: 'Both buttons.' })
+      );
+
+      const found = await new SemanticResolver(llm).resolveAll(
+        target({ description: 'Add to cart buttons' }),
+        elements,
+        INVENTORY_YAML
+      );
+
+      expect(found.map(entry => entry.ref)).toEqual(['e54', 'e66']);
+    });
+
+    it('returns an empty list when nothing matches', async () => {
+      const { llm } = createLlm(
+        JSON.stringify({ refs: [], reason: 'No badge.' })
+      );
+
+      await expect(
+        new SemanticResolver(llm).resolveAll(
+          target(),
+          elements,
+          INVENTORY_YAML
+        )
+      ).resolves.toEqual([]);
+    });
+
+    it('rejects refs that are not in the snapshot', async () => {
+      const { llm } = createLlm(
+        JSON.stringify({ refs: ['e999'], reason: 'Guess.' })
+      );
+
+      await expect(
+        new SemanticResolver(llm).resolveAll(
+          target(),
+          elements,
+          INVENTORY_YAML
+        )
+      ).rejects.toThrow(/not in the snapshot/);
+    });
+
+    it('rejects a response without a refs list', async () => {
+      const { llm } = createLlm(JSON.stringify({ ref: 'e54' }));
+
+      await expect(
+        new SemanticResolver(llm).resolveAll(
+          target(),
+          elements,
+          INVENTORY_YAML
+        )
+      ).rejects.toThrow(/no refs list/);
+    });
+
+    it('uses the plan fields when there is no LLM', async () => {
+      const found = await new SemanticResolver(null).resolveAll(
+        target({ visibleText: 'Add to cart' }),
+        elements,
+        INVENTORY_YAML
+      );
+
+      expect(found).toHaveLength(2);
+    });
+  });
+
   it('fails without an LLM when a match is not unique', async () => {
     await expect(
       new SemanticResolver(null).resolve(
